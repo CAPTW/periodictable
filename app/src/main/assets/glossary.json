@@ -1,0 +1,23 @@
+[{
+  "id": "electronegativity",
+  "termKo": "전기음성도",
+  "termEn": "Electronegativity",
+  "definition": "원자가 화학 결합에서 전자를 끌어당기려는 능력의 척도입니다.",
+  "simpleExplanation": "원자들이 전자를 끌어당기는 힘의 상대적 크기입니다.",
+  "category": "BONDING",
+  "interactiveType": "ELECTRON_ANIMATION",
+  "relatedElements": [1, 9, 17],
+  "relatedTerms": ["covalent_bond", "ionic_bond"],
+  "isBookmarked": false
+}, {
+  "id": "half_life",
+  "termKo": "반감기",
+  "termEn": "Half-life",
+  "definition": "방사성 핵종의 양이 절반으로 감소하는 데 걸리는 시간입니다.",
+  "simpleExplanation": "원자핵이 절반으로 줄어드는 시간 간격을 말합니다.",
+  "category": "NUCLEAR",
+  "interactiveType": "DECAY_SIMULATION",
+  "relatedElements": [],
+  "relatedTerms": ["radioactivity"],
+  "isBookmarked": false
+}]
