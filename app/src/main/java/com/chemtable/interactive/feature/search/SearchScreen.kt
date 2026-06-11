@@ -28,6 +28,7 @@ import com.chemtable.interactive.core.model.ElementCategory
 @Composable
 fun SearchScreen(
     innerPadding: androidx.compose.foundation.layout.PaddingValues,
+    onElementClick: (Int) -> Unit = {},
     viewModel: SearchViewModel = hiltViewModel()
 ) {
     val query by viewModel.queryFlow.collectAsState()
