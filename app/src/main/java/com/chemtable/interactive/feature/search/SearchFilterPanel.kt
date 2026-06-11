@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
@@ -41,6 +40,8 @@ private fun ElementCategory.label(): String = when (this) {
 fun SearchFilterPanel(
     searchMode: SearchMode,
     onSearchModeChange: (SearchMode) -> Unit,
+    sortOption: SearchSortOption,
+    onSortOptionChange: (SearchSortOption) -> Unit,
     selectedCategories: Set<ElementCategory>,
     onToggleCategory: (ElementCategory) -> Unit,
     electronegativityRange: ClosedFloatingPointRange<Float>,
@@ -76,6 +77,22 @@ fun SearchFilterPanel(
                         selected = searchMode == mode,
                         onClick = { onSearchModeChange(mode) },
                         label = { Text(mode.label) }
+                    )
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("정렬", style = MaterialTheme.typography.titleSmall)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (option in SearchSortOption.values()) {
+                    FilterChip(
+                        selected = sortOption == option,
+                        onClick = { onSortOptionChange(option) },
+                        label = { Text(option.label) }
                     )
                 }
             }
