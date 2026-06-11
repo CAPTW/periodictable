@@ -25,15 +25,56 @@ Write-Host "▶ Using JAVA_HOME: $env:JAVA_HOME" -ForegroundColor Cyan
 Write-Host "▶ Using Gradle: $GradleExe" -ForegroundColor Cyan
 Write-Host "▶ PROJECT_ROOT: $env:PROJECT_ROOT" -ForegroundColor Cyan
 
+function Remove-GeneratedDirs {
+    $targets = @(
+        (Join-Path $env:PROJECT_ROOT "app\build\generated\ksp"),
+        (Join-Path $env:PROJECT_ROOT "app\build\generated\hilt"),
+        (Join-Path $env:PROJECT_ROOT "app\build\generated\ap_generated_sources")
+    )
+
+    foreach ($target in $targets) {
+        if (Test-Path $target) {
+            cmd /c "attrib -R `"$target`" /S /D >nul 2>&1" | Out-Null
+            cmd /c "rd /s /q `"$target`" >nul 2>&1" | Out-Null
+        }
+    }
+}
+
+function Purge-BuildDirs {
+    $targets = @(
+        (Join-Path $env:PROJECT_ROOT "app\build"),
+        (Join-Path $env:PROJECT_ROOT "build")
+    )
+
+    foreach ($target in $targets) {
+        if (Test-Path $target) {
+            cmd /c "attrib -R `"$target`" /S /D >nul 2>&1" | Out-Null
+            cmd /c "rd /s /q `"$target`" >nul 2>&1" | Out-Null
+        }
+    }
+}
+
 Push-Location $env:PROJECT_ROOT
 try {
-    Write-Host "`n=== clean ===" -ForegroundColor Cyan
-    & $GradleExe --no-daemon clean
-    if ($LASTEXITCODE -ne 0) { throw "clean failed (exit $LASTEXITCODE)" }
+    Write-Host "`n=== validate assets ===" -ForegroundColor Cyan
+    if (Get-Command python -ErrorAction SilentlyContinue) {
+        python scripts/validate_assets.py
+    }
+    elseif (Get-Command py -ErrorAction SilentlyContinue) {
+        py scripts/validate_assets.py
+    }
+    else {
+        throw "python runtime not found for asset validation"
+    }
+    if ($LASTEXITCODE -ne 0) { throw "asset validation failed (exit $LASTEXITCODE)" }
 
-    Write-Host "`n=== lint + test + assembleDebug ===" -ForegroundColor Cyan
-    & $GradleExe --no-daemon lint test assembleDebug
-    if ($LASTEXITCODE -ne 0) { throw "lint/test/assembleDebug failed (exit $LASTEXITCODE)" }
+    Write-Host "`n=== clean (filesystem purge) ===" -ForegroundColor Cyan
+    Purge-BuildDirs
+
+    Remove-GeneratedDirs
+    Write-Host "`n=== lintRelease + testReleaseUnitTest + assembleRelease ===" -ForegroundColor Cyan
+    & $GradleExe --no-daemon lintRelease testReleaseUnitTest assembleRelease
+    if ($LASTEXITCODE -ne 0) { throw "lintRelease/testReleaseUnitTest/assembleRelease failed (exit $LASTEXITCODE)" }
 
     Write-Host "`n✅ verify PASS" -ForegroundColor Green
 }

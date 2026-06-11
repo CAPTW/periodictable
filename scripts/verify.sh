@@ -16,5 +16,23 @@ fi
 
 # Basic Android validation (adjust to your project if needed)
 cd "$PROJECT_ROOT"
-"$GRADLE_EXE" --no-daemon clean
-"$GRADLE_EXE" --no-daemon lint test assembleDebug
+
+if command -v python >/dev/null 2>&1; then
+  python scripts/validate_assets.py
+elif command -v python3 >/dev/null 2>&1; then
+  python3 scripts/validate_assets.py
+else
+  echo "python runtime not found for asset validation" >&2
+  exit 2
+fi
+
+remove_generated_dirs() {
+  rm -rf \
+    "$PROJECT_ROOT/app/build/generated/ksp" \
+    "$PROJECT_ROOT/app/build/generated/hilt" \
+    "$PROJECT_ROOT/app/build/generated/ap_generated_sources"
+}
+
+rm -rf "$PROJECT_ROOT/app/build" "$PROJECT_ROOT/build"
+remove_generated_dirs
+"$GRADLE_EXE" --no-daemon lintRelease testReleaseUnitTest assembleRelease
