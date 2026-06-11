@@ -22,6 +22,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -43,6 +44,15 @@ fun CalculatorScreen(
     val error by viewModel.error.collectAsState()
     val components by viewModel.components.collectAsState()
     val history by viewModel.history.collectAsState()
+    val autoCalculate by viewModel.autoCalculate.collectAsState()
+
+    // 프리필 식이 있으면 진입 시 1회만 자동 계산해 결과까지 보여준다.
+    LaunchedEffect(autoCalculate) {
+        if (autoCalculate) {
+            viewModel.calculate()
+            viewModel.onPrefillAutoCalculateHandled()
+        }
+    }
 
     val quickKeys = listOf("H", "C", "N", "O", "S", "P", "Cl", "Na", "Ca", "Fe", "Cu", "(", ")", "·", "→", "+")
     val digitKeys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")

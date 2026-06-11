@@ -40,6 +40,7 @@ import kotlin.math.min
 @Composable
 fun VisualizationScreen(
     innerPadding: PaddingValues,
+    onPlayMiniGame: () -> Unit = {},
     viewModel: VisualizationViewModel = hiltViewModel()
 ) {
     val mode by viewModel.selectedMode.collectAsState()
@@ -57,6 +58,22 @@ fun VisualizationScreen(
             .padding(ChemTableSpacing.screenPadding)
     ) {
         Text("속성 시각화", style = MaterialTheme.typography.titleLarge)
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Card(
+            onClick = onPlayMiniGame,
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("분자 만들기", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "원소를 모아 분자를 합성하는 미니게임 · 탭하여 플레이",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(
             modifier = Modifier

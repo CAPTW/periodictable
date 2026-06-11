@@ -1,0 +1,269 @@
+package com.chemtable.interactive.feature.minigame
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.chemtable.interactive.core.model.Element
+import com.chemtable.interactive.core.model.GlossaryTerm
+import com.chemtable.interactive.core.util.MolarMassCalculator
+import com.chemtable.interactive.domain.usecase.GetElementsUseCase
+import com.chemtable.interactive.domain.usecase.GetGlossaryUseCase
+import com.chemtable.interactive.feature.minigame.engine.BoardEngine
+import com.chemtable.interactive.feature.minigame.engine.FormulaMassResolver
+import com.chemtable.interactive.feature.minigame.model.Direction
+import com.chemtable.interactive.feature.minigame.model.GameEffect
+import com.chemtable.interactive.feature.minigame.model.GameEvent
+import com.chemtable.interactive.feature.minigame.model.GamePhase
+import com.chemtable.interactive.feature.minigame.model.GameUiState
+import com.chemtable.interactive.feature.minigame.model.MissionTarget
+import com.chemtable.interactive.feature.minigame.model.SpawnableElement
+import com.chemtable.interactive.feature.minigame.model.MoleculeBlock
+import com.chemtable.interactive.feature.minigame.model.SelectedMoleculeSheet
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import kotlin.random.Random
+
+/**
+ * 미니게임 ViewModel. 검증된 순수 BoardEngine 을 구동한다.
+ *
+ * - 원소 데이터는 GetElementsUseCase 로 받아 스폰 풀을 구성한다.
+ * - 분자량은 기존 MolarMassCalculator 를 감싼 FormulaMassResolver 로 계산한다(엔진은 순수 유지).
+ * - MVP: Room/DB/도감/최고점수 없음. 튜토리얼 노출 여부는 세션 메모리 플래그.
+ */
+@HiltViewModel
+class MoleculeGameViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
+    getElementsUseCase: GetElementsUseCase,
+    getGlossaryUseCase: GetGlossaryUseCase,
+    private val molarMassCalculator: MolarMassCalculator,
+    private val moleculeElementLinkResolver: MoleculeElementLinkResolver,
+    private val moleculeGlossaryLinkResolver: MoleculeGlossaryLinkResolver,
+) : ViewModel() {
+
+    private val startElementAtomicNumber: Int? = savedStateHandle.get<Int>("atomicNumber")?.takeIf { it > 0 }
+
+    private val _uiState = MutableStateFlow(GameUiState.initial())
+    val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
+
+    private val _effects = Channel<GameEffect>(Channel.BUFFERED)
+    val effects = _effects.receiveAsFlow()
+
+    private var elements: List<Element> = emptyList()
+    private var glossaryTerms: List<GlossaryTerm> = emptyList()
+    private var engine: BoardEngine? = null
+    private var hasSeenTutorial = false
+    private val madeCount = mutableMapOf<String, Int>()
+
+    init {
+        viewModelScope.launch {
+            getElementsUseCase().collect { loaded ->
+                elements = loaded
+                rebuildEngine()
+                _uiState.update { state ->
+                    val formulas = state.discoveredMolecules.map { molecule -> molecule.formula }
+                    state.copy(
+                        isEngineReady = engine != null && loaded.isNotEmpty(),
+                        discoveredMolecules = discoveredMoleculesFor(formulas),
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            getGlossaryUseCase.allTerms().collect { loaded ->
+                glossaryTerms = loaded
+                _uiState.update { state ->
+                    val formulas = state.discoveredMolecules.map { molecule -> molecule.formula }
+                    state.copy(discoveredMolecules = discoveredMoleculesFor(formulas))
+                }
+            }
+        }
+    }
+
+    fun onEvent(event: GameEvent) {
+        when (event) {
+            GameEvent.StartGame -> startGame()
+            GameEvent.Restart -> startGame()
+            is GameEvent.Swipe -> handleSwipe(event.direction)
+            GameEvent.Pause -> _uiState.update {
+                if (it.phase == GamePhase.PLAYING) it.copy(phase = GamePhase.PAUSED) else it
+            }
+            GameEvent.Resume -> _uiState.update {
+                if (it.phase == GamePhase.PAUSED) it.copy(phase = GamePhase.PLAYING) else it
+            }
+            GameEvent.Exit -> viewModelScope.launch { _effects.send(GameEffect.NavigateBack) }
+            is GameEvent.OpenCalculator -> viewModelScope.launch {
+                _uiState.update { it.copy(selectedMoleculeSheet = null) }
+                _effects.send(GameEffect.NavigateToCalculator(event.formula))
+            }
+            is GameEvent.OpenElement -> viewModelScope.launch {
+                _uiState.update { it.copy(selectedMoleculeSheet = null) }
+                if (event.atomicNumber > 0) {
+                    _effects.send(GameEffect.NavigateToElement(event.atomicNumber))
+                }
+            }
+            is GameEvent.OpenGlossary -> viewModelScope.launch {
+                _uiState.update { it.copy(selectedMoleculeSheet = null) }
+                if (event.termId.isNotBlank() && glossaryTerms.any { it.id == event.termId }) {
+                    _effects.send(GameEffect.NavigateToGlossary(event.termId))
+                }
+            }
+            GameEvent.SkipTutorial -> _uiState.update { it.copy(showTutorial = false) }
+            GameEvent.ShowTutorial -> _uiState.update { it.copy(showTutorial = true) }
+            is GameEvent.BlockTapped -> handleBlockTapped(event.blockId)
+            GameEvent.CloseMoleculeSheet -> _uiState.update { it.copy(selectedMoleculeSheet = null) }
+        }
+    }
+
+    private fun rebuildEngine() {
+        val resolver = FormulaMassResolver { formula ->
+            runCatching { molarMassCalculator.calculate(formula, elements).totalMolarMass }
+                .getOrDefault(0.0)
+        }
+        engine = BoardEngine(
+            resolver = resolver,
+            spawnPool = buildSpawnPool(elements),
+            random = Random(System.nanoTime()),
+        )
+    }
+
+    private fun startGame() {
+        val activeEngine = engine ?: return
+        madeCount.clear()
+        val startSpec = startElementAtomicNumber?.let { targetId ->
+            elements.find { it.atomicNumber == targetId }?.let { elem ->
+                SpawnableElement(
+                    atomicNumber = elem.atomicNumber,
+                    symbol = elem.symbol,
+                    nameKo = elem.nameKo,
+                    molarMass = elem.molarMass,
+                    category = elem.category,
+                )
+            }
+        }
+        val board = activeEngine.seedBoard(INITIAL_BLOCKS, startSpec)
+        val firstTime = !hasSeenTutorial
+        hasSeenTutorial = true
+        _uiState.update {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                board = board,
+                score = 0,
+                combo = 0,
+                missionTarget = MissionTarget(formula = MISSION_FORMULA, count = MISSION_COUNT, progress = 0),
+                movesLeft = null,
+                discoveredMolecules = emptyList(),
+                resultSuccess = false,
+                showTutorial = firstTime,
+                selectedMoleculeSheet = null,
+            )
+        }
+    }
+
+    private fun handleSwipe(direction: Direction) {
+        val state = _uiState.value
+        if (state.phase != GamePhase.PLAYING) return
+        val activeEngine = engine ?: return
+
+        val result = activeEngine.move(state.board, direction)
+        if (!result.moved) {
+            viewModelScope.launch { _effects.send(GameEffect.MergeRejected) }
+            return
+        }
+
+        result.mergedFormulas.forEach { formula ->
+            madeCount[formula] = (madeCount[formula] ?: 0) + 1
+        }
+        val discoveredFormulas = (state.discoveredMolecules.map { it.formula } + result.mergedFormulas).distinct()
+        val discovered = discoveredMoleculesFor(discoveredFormulas)
+        val target = state.missionTarget?.copy(progress = madeCount[state.missionTarget.formula] ?: 0)
+        val success = target?.isComplete == true
+        val newPhase = when {
+            success -> GamePhase.RESULT
+            result.isGameOver -> GamePhase.RESULT
+            else -> GamePhase.PLAYING
+        }
+
+        _uiState.update {
+            it.copy(
+                board = result.board,
+                score = it.score + result.gainedScore,
+                combo = if (result.mergedFormulas.isNotEmpty()) it.combo + 1 else 0,
+                discoveredMolecules = discovered,
+                missionTarget = target,
+                phase = newPhase,
+                resultSuccess = if (newPhase == GamePhase.RESULT) success else it.resultSuccess,
+            )
+        }
+
+        if (result.mergedFormulas.isNotEmpty()) {
+            val label = result.mergedFormulas.joinToString(" + ")
+            viewModelScope.launch { _effects.send(GameEffect.MergeSuccess(label, result.gainedScore)) }
+        }
+    }
+
+    private fun discoveredMoleculesFor(formulas: List<String>) =
+        moleculeElementLinkResolver.discoveredMoleculesFor(formulas, elements).map { molecule ->
+            molecule.copy(
+                glossaryLinks = moleculeGlossaryLinkResolver.linksForFormula(molecule.formula, glossaryTerms),
+            )
+        }
+
+    private fun buildSpawnPool(source: List<Element>): List<SpawnableElement> {
+        val bySymbol = source.associateBy { it.symbol }
+        return SPAWN_SYMBOLS.mapNotNull { symbol ->
+            bySymbol[symbol]?.let {
+                SpawnableElement(
+                    atomicNumber = it.atomicNumber,
+                    symbol = it.symbol,
+                    nameKo = it.nameKo,
+                    molarMass = it.molarMass,
+                    category = it.category,
+                )
+            }
+        }
+    }
+
+    private fun handleBlockTapped(blockId: Long) {
+        val state = _uiState.value
+        if (state.phase != GamePhase.PLAYING) return
+
+        val board = state.board
+        val block = board.blocks().find { it.id == blockId }
+        if (block is MoleculeBlock) {
+            _uiState.update {
+                it.copy(
+                    selectedMoleculeSheet = SelectedMoleculeSheet(
+                        blockId = block.id,
+                        formula = block.formula,
+                        molarMass = block.massScore,
+                        elementLinks = moleculeElementLinkResolver.linksForFormula(block.formula, elements),
+                        glossaryLinks = moleculeGlossaryLinkResolver.linksForFormula(block.formula, glossaryTerms),
+                    ),
+                )
+            }
+        }
+    }
+
+    companion object {
+        private const val INITIAL_BLOCKS = 4
+        private const val MISSION_FORMULA = "H2O"
+        private const val MISSION_COUNT = 2
+
+        // 레시피 달성 가능하도록 가중치를 둔 스폰 풀(중복 = 더 자주 등장).
+        private val SPAWN_SYMBOLS = listOf(
+            "H", "H", "H",
+            "O", "O", "O",
+            "N",
+            "C",
+            "Na", "Na",
+            "Cl", "Cl",
+        )
+    }
+}

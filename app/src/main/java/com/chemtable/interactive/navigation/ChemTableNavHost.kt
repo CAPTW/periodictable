@@ -1,9 +1,10 @@
 package com.chemtable.interactive.navigation
 
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.Icon
@@ -14,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -30,6 +30,7 @@ import com.chemtable.interactive.feature.glossary.GlossaryScreen
 import com.chemtable.interactive.feature.notes.NoteEditorScreen
 import com.chemtable.interactive.feature.notes.NotesListScreen
 import com.chemtable.interactive.feature.calculator.CalculatorScreen
+import com.chemtable.interactive.feature.minigame.MoleculeGameScreen
 import com.chemtable.interactive.feature.visualization.VisualizationScreen
 import com.chemtable.interactive.feature.periodictable.PeriodicTableScreen
 import com.chemtable.interactive.feature.search.SearchScreen
@@ -38,13 +39,21 @@ import com.chemtable.interactive.feature.settings.SettingsScreen
 private sealed class BottomTab(
     val screen: Screen,
     val icon: ImageVector,
-    val label: String
+    val label: String,
+    // screen.route: Jetpack Navigation Graph 등록을 위한 라우트 패턴 (예: "calculator?formula={formula}")
+    // navRoute: 하단 탭 버튼을 눌렀을 때 실제로 이동할 구체적 경로 (예: 계산기는 빈 폼으로 진입하기 위해 "calculator" 사용)
+    val navRoute: String = screen.route,
 ) {
     object Table : BottomTab(Screen.PeriodicTable, Icons.Filled.ViewModule, "주기율표")
     object Search : BottomTab(Screen.Search, Icons.Filled.Search, "검색")
     object Visual : BottomTab(Screen.Visualization, Icons.AutoMirrored.Filled.List, "시각화")
-    object Calc : BottomTab(Screen.Calculator, Icons.Filled.Calculate, "계산기")
-    object Dict : BottomTab(Screen.Glossary, Icons.Filled.MenuBook, "사전")
+    object Calc : BottomTab(
+        Screen.Calculator,
+        Icons.Filled.Calculate,
+        "계산기",
+        navRoute = Screen.Calculator.createRoute(),
+    )
+    object Dict : BottomTab(Screen.Glossary, Icons.AutoMirrored.Filled.MenuBook, "사전")
 }
 
 @Composable
@@ -55,22 +64,27 @@ fun ChemTableNavHost(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.PeriodicTable.route
 
+    // 게임 플레이 화면(풀스크린)에서는 하단바를 숨긴다.
+    val showBottomBar = currentRoute?.startsWith("game/") != true
+
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                for (tab in tabs) {
-                    NavigationBarItem(
-                        selected = currentRoute == tab.screen.route,
-                        onClick = {
-                            navController.navigate(tab.screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        label = { Text(tab.label) }
-                    )
+            if (showBottomBar) {
+                NavigationBar {
+                    for (tab in tabs) {
+                        NavigationBarItem(
+                            selected = currentRoute == tab.screen.route,
+                            onClick = {
+                                navController.navigate(tab.navRoute) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label) }
+                        )
+                    }
                 }
             }
         }
@@ -85,7 +99,12 @@ fun ChemTableNavHost(
                 )
             }
             composable(Screen.Search.route) {
-                SearchScreen(innerPadding = innerPadding)
+                SearchScreen(
+                    innerPadding = innerPadding,
+                    onElementClick = { atomicNumber ->
+                        navController.navigate(Screen.ElementDetail.createRoute(atomicNumber))
+                    }
+                )
             }
             composable(
                 route = Screen.ElementDetail.route,
@@ -99,13 +118,58 @@ fun ChemTableNavHost(
                     },
                     onAddNote = { id ->
                         navController.navigate(Screen.NoteEditor.createRoute(noteId = null, elementId = id))
+                    },
+                    onOpenGlossaryTerm = { termId ->
+                        navController.navigate(Screen.GlossaryDetail.createRoute(termId))
+                    },
+                    onPlayMiniGame = { id ->
+                        navController.navigate(Screen.MoleculeGame.createRoute(id)) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
             composable(Screen.Visualization.route) {
-                VisualizationScreen(innerPadding = innerPadding)
+                VisualizationScreen(
+                    innerPadding = innerPadding,
+                    onPlayMiniGame = {
+                        navController.navigate(Screen.MoleculeGame.createRoute()) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
-            composable(Screen.Calculator.route) {
+            composable(
+                route = Screen.MoleculeGame.route,
+                arguments = listOf(navArgument("atomicNumber") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                })
+            ) {
+                MoleculeGameScreen(
+                    onExit = { navController.popBackStack() },
+                    // 게임 → 계산기: 식 프리필 전달. 게임 라우트는 백스택에 남아 back 시 결과로 복귀.
+                    onOpenCalculator = { formula ->
+                        navController.navigate(Screen.Calculator.createRoute(formula)) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onOpenElement = { atomicNumber ->
+                        navController.navigate(Screen.ElementDetail.createRoute(atomicNumber))
+                    },
+                    onOpenGlossary = { termId ->
+                        navController.navigate(Screen.GlossaryDetail.createRoute(termId))
+                    }
+                )
+            }
+            composable(
+                route = Screen.Calculator.route,
+                arguments = listOf(navArgument(Screen.Calculator.ARG_FORMULA) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) {
                 CalculatorScreen(innerPadding = innerPadding, onNavigateToPeriodicTable = {
                     navController.navigate(Screen.PeriodicTable.route) {
                         launchSingleTop = true
@@ -166,8 +230,14 @@ fun ChemTableNavHost(
                 val termId = entry.arguments?.getString("termId") ?: ""
                 GlossaryDetailScreen(
                     innerPadding = innerPadding,
-                    termId = termId,
-                    onNavigateBack = { navController.popBackStack() }
+                    termId = Uri.decode(termId),
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenTerm = { selectedTermId ->
+                        navController.navigate(Screen.GlossaryDetail.createRoute(selectedTermId))
+                    },
+                    onOpenElement = { atomicNumber ->
+                        navController.navigate(Screen.ElementDetail.createRoute(atomicNumber))
+                    }
                 )
             }
             composable(Screen.Settings.route) {
