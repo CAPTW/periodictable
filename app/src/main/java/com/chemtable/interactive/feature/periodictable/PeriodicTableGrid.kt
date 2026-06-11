@@ -20,6 +20,7 @@ private data class GridSlot(val element: Element?)
 @Composable
 fun PeriodicTableGrid(
     elements: List<Element>,
+    selectedAtomicNumber: Int?,
     onElementClick: (Int) -> Unit,
     onElementLongClick: (Int) -> Unit,
     modifier: Modifier = Modifier
@@ -48,6 +49,7 @@ fun PeriodicTableGrid(
                 ElementCell(
                     element = slot.element,
                     isCompact = true,
+                    isSelected = selectedAtomicNumber == slot.element.atomicNumber,
                     onClick = { onElementClick(slot.element.atomicNumber) },
                     onLongClick = { onElementLongClick(slot.element.atomicNumber) }
                 )
