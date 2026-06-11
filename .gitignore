@@ -16,3 +16,7 @@ task-*.log
 
 artifacts/*.png
 agent/swarm-worktrees/
+agent/logs/
+
+.codex/
+.vscode/
