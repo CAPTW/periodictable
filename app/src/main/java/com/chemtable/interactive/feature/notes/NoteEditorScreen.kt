@@ -95,11 +95,9 @@ fun NoteEditorScreen(
             )
             if (state.noteId != null) {
                 TextButton(
-                    onClick = {
-                        // 향후 삭제 기능 추가 예정
-                    }
+                    onClick = { viewModel.deleteCurrentNote(onSaved) }
                 ) {
-                    Text("삭제")
+                    Text("삭제", color = MaterialTheme.colorScheme.error)
                 }
             }
         }

@@ -35,6 +35,7 @@ class NoteEditorViewModel @Inject constructor(
         )
     )
     val noteUiState: StateFlow<NoteEditorUiState> = _noteUiState.asStateFlow()
+    private var loadedNote: ElementNote? = null
 
     init {
         if ((noteId ?: 0L) > 0L) {
@@ -49,6 +50,7 @@ class NoteEditorViewModel @Inject constructor(
                 .firstOrNull()
 
             found?.let { note ->
+                loadedNote = note
                 _noteUiState.update {
                     it.copy(
                         noteId = note.id,
@@ -97,7 +99,16 @@ class NoteEditorViewModel @Inject constructor(
             )
 
             manageNotesUseCase.upsert(note)
+            loadedNote = note
             onSaved()
+        }
+    }
+
+    fun deleteCurrentNote(onDeleted: () -> Unit = {}) {
+        val target = loadedNote ?: return
+        viewModelScope.launch {
+            manageNotesUseCase.delete(target)
+            onDeleted()
         }
     }
 }
