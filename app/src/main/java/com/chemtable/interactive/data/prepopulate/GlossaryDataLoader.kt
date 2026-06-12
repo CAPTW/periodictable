@@ -27,7 +27,7 @@ class GlossaryDataLoader(
         definition = getString("definition"),
         simpleExplanation = getString("simpleExplanation"),
         category = getString("category"),
-        interactiveType = optString("interactiveType", null),
+        interactiveType = optStringOrNull("interactiveType"),
         relatedElements = getIntArray("relatedElements"),
         relatedTerms = getStringArray("relatedTerms"),
         isBookmarked = optBoolean("isBookmarked", false)
@@ -43,5 +43,10 @@ class GlossaryDataLoader(
         if (!has(key) || isNull(key)) return emptyList()
         val array = getJSONArray(key)
         return (0 until array.length()).map { array.getString(it) }
+    }
+
+    private fun JSONObject.optStringOrNull(key: String): String? {
+        if (!has(key) || isNull(key)) return null
+        return optString(key, "").ifBlank { null }
     }
 }
