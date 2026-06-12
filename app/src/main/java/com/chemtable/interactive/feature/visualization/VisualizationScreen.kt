@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +40,7 @@ import kotlin.math.min
 fun VisualizationScreen(
     innerPadding: PaddingValues,
     onPlayMiniGame: () -> Unit = {},
+    onOpenMoleculeDex: () -> Unit = {},
     viewModel: VisualizationViewModel = hiltViewModel()
 ) {
     val mode by viewModel.selectedMode.collectAsState()
@@ -69,6 +69,20 @@ fun VisualizationScreen(
                 Text("분자 만들기", style = MaterialTheme.typography.titleMedium)
                 Text(
                     "원소를 모아 분자를 합성하는 미니게임 · 탭하여 플레이",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Card(
+            onClick = onOpenMoleculeDex,
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("분자 도감", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "게임에서 발견한 분자와 최고점수를 확인하세요",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

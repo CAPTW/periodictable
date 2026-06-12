@@ -30,6 +30,7 @@ import com.chemtable.interactive.feature.glossary.GlossaryScreen
 import com.chemtable.interactive.feature.notes.NoteEditorScreen
 import com.chemtable.interactive.feature.notes.NotesListScreen
 import com.chemtable.interactive.feature.calculator.CalculatorScreen
+import com.chemtable.interactive.feature.minigame.dex.MoleculeDexScreen
 import com.chemtable.interactive.feature.minigame.MoleculeGameScreen
 import com.chemtable.interactive.feature.visualization.VisualizationScreen
 import com.chemtable.interactive.feature.periodictable.PeriodicTableScreen
@@ -72,8 +73,10 @@ fun ChemTableNavHost(
             if (showBottomBar) {
                 NavigationBar {
                     for (tab in tabs) {
+                        val selected = currentRoute == tab.screen.route ||
+                            (tab.screen == Screen.Visualization && currentRoute == Screen.MoleculeDex.route)
                         NavigationBarItem(
-                            selected = currentRoute == tab.screen.route,
+                            selected = selected,
                             onClick = {
                                 navController.navigate(tab.navRoute) {
                                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -136,6 +139,33 @@ fun ChemTableNavHost(
                         navController.navigate(Screen.MoleculeGame.createRoute()) {
                             launchSingleTop = true
                         }
+                    },
+                    onOpenMoleculeDex = {
+                        navController.navigate(Screen.MoleculeDex.route) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            composable(Screen.MoleculeDex.route) {
+                MoleculeDexScreen(
+                    innerPadding = innerPadding,
+                    onNavigateBack = { navController.popBackStack() },
+                    onPlayMiniGame = {
+                        navController.navigate(Screen.MoleculeGame.createRoute()) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onOpenCalculator = { formula ->
+                        navController.navigate(Screen.Calculator.createRoute(formula)) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onOpenElement = { atomicNumber ->
+                        navController.navigate(Screen.ElementDetail.createRoute(atomicNumber))
+                    },
+                    onOpenGlossary = { termId ->
+                        navController.navigate(Screen.GlossaryDetail.createRoute(termId))
                     }
                 )
             }
