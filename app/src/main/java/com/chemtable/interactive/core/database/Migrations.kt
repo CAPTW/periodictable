@@ -4,6 +4,35 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 object DbMigrations {
+    internal val MIGRATION_4_5_SQL: List<String> = listOf(
+        """
+        CREATE TABLE IF NOT EXISTS game_molecule_discoveries (
+            formula TEXT NOT NULL,
+            firstDiscoveredAt INTEGER NOT NULL,
+            lastDiscoveredAt INTEGER NOT NULL,
+            discoveryCount INTEGER NOT NULL,
+            PRIMARY KEY(formula)
+        )
+        """.trimIndent(),
+        """
+        CREATE TABLE IF NOT EXISTS game_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            score INTEGER NOT NULL,
+            success INTEGER NOT NULL,
+            difficulty TEXT NOT NULL,
+            missionFormula TEXT,
+            missionTargetCount INTEGER,
+            playedAt INTEGER NOT NULL,
+            moleculesMade TEXT NOT NULL
+        )
+        """.trimIndent(),
+        "CREATE INDEX IF NOT EXISTS index_game_molecule_discoveries_lastDiscoveredAt ON game_molecule_discoveries(lastDiscoveredAt)",
+        "CREATE INDEX IF NOT EXISTS index_game_molecule_discoveries_discoveryCount ON game_molecule_discoveries(discoveryCount)",
+        "CREATE INDEX IF NOT EXISTS index_game_sessions_playedAt ON game_sessions(playedAt)",
+        "CREATE INDEX IF NOT EXISTS index_game_sessions_score ON game_sessions(score)",
+        "CREATE INDEX IF NOT EXISTS index_game_sessions_difficulty ON game_sessions(difficulty)",
+    )
+
     val MIGRATION_2_3: Migration = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE elements ADD COLUMN latin_name TEXT")
@@ -104,6 +133,12 @@ object DbMigrations {
                 "ALTER TABLE elements ADD COLUMN data_confidence REAL"
             )
             alterColumns.forEach { db.execSQL(it) }
+        }
+    }
+
+    val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            MIGRATION_4_5_SQL.forEach { statement -> db.execSQL(statement) }
         }
     }
 }

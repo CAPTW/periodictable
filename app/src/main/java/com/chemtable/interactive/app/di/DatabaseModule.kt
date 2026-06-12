@@ -6,6 +6,7 @@ import com.chemtable.interactive.core.database.ChemTableDatabase
 import com.chemtable.interactive.core.database.DbMigrations
 import com.chemtable.interactive.core.database.dao.CalcHistoryDao
 import com.chemtable.interactive.core.database.dao.ElementDao
+import com.chemtable.interactive.core.database.dao.GameStatsDao
 import com.chemtable.interactive.core.database.dao.GlossaryDao
 import com.chemtable.interactive.core.database.dao.IsotopeDao
 import com.chemtable.interactive.core.database.dao.NoteDao
@@ -31,7 +32,8 @@ object DatabaseModule {
         "chemtable.db"
     ).addMigrations(
         DbMigrations.MIGRATION_2_3,
-        DbMigrations.MIGRATION_3_4
+        DbMigrations.MIGRATION_3_4,
+        DbMigrations.MIGRATION_4_5
     ).build()
 
     @Provides
@@ -48,6 +50,9 @@ object DatabaseModule {
 
     @Provides
     fun provideCalcHistoryDao(database: ChemTableDatabase): CalcHistoryDao = database.calcHistoryDao()
+
+    @Provides
+    fun provideGameStatsDao(database: ChemTableDatabase): GameStatsDao = database.gameStatsDao()
 
     @Provides
     @Singleton
