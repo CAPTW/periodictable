@@ -6,12 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -40,6 +37,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -51,6 +49,7 @@ import com.chemtable.interactive.feature.minigame.model.MoleculeGlossaryLink
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun MoleculeDexScreen(
@@ -163,7 +162,7 @@ private fun MoleculeDexSummary(state: MoleculeDexUiState) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SummaryMetric(label = "발견", value = "${state.discoveredCount}개")
             SummaryMetric(label = "최고점수", value = state.highScore?.let { "${it}점" } ?: "-")
@@ -176,10 +175,22 @@ private fun MoleculeDexSummary(state: MoleculeDexUiState) {
 }
 
 @Composable
-private fun SummaryMetric(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, style = MaterialTheme.typography.labelSmall)
-        Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+private fun RowScope.SummaryMetric(label: String, value: String) {
+    Column(
+        modifier = Modifier.weight(1f),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -195,8 +206,13 @@ private fun EmptyDexState(onPlayMiniGame: () -> Unit) {
                 "분자 만들기 게임에서 첫 분자를 만들어 보세요.",
                 style = MaterialTheme.typography.bodySmall,
             )
-            Button(onClick = onPlayMiniGame, modifier = Modifier.fillMaxWidth()) {
-                Text("분자 만들기")
+            Button(
+                onClick = onPlayMiniGame,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "분자 만들기 게임 시작" },
+            ) {
+                Text("분자 만들기 시작")
             }
         }
     }
@@ -211,7 +227,12 @@ private fun ErrorDexState(message: String, onPlayMiniGame: () -> Unit) {
         ) {
             Text("분자 도감을 불러올 수 없어요.", style = MaterialTheme.typography.titleMedium)
             Text(message, style = MaterialTheme.typography.bodySmall)
-            Button(onClick = onPlayMiniGame, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = onPlayMiniGame,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "분자 만들기 게임으로 이동" },
+            ) {
                 Text("분자 만들기")
             }
         }
@@ -237,10 +258,14 @@ private fun MoleculeDexRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                val lastDiscoveredText = formatDexTimestamp(item.lastDiscoveredAt)
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .semantics { contentDescription = "${item.formula} 분자" },
+                        .semantics {
+                            contentDescription =
+                                "${item.formula} 분자, 발견 ${item.discoveryCount}회, 최근 $lastDiscoveredText"
+                        },
                 ) {
                     Text(
                         text = formulaToAnnotated(item.formula),
@@ -248,7 +273,7 @@ private fun MoleculeDexRow(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "발견 ${item.discoveryCount}회 · 최근 ${formatTimestamp(item.lastDiscoveredAt)}",
+                        text = "발견 ${item.discoveryCount}회 · 최근 $lastDiscoveredText",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -328,9 +353,21 @@ private fun RecentSessionsCard(sessions: List<MoleculeDexSessionItem>) {
                     HorizontalDivider()
                 }
                 Text(
-                    text = "${if (session.success) "성공" else "종료"} · ${session.score}점 · ${formatTimestamp(session.playedAt)}",
+                    text = "${if (session.success) "성공" else "종료"} · ${session.score}점 · ${formatDexTimestamp(session.playedAt)}",
                     style = MaterialTheme.typography.bodySmall,
                 )
+                val mission = session.missionFormula
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { formula ->
+                        session.missionTargetCount?.let { count -> "목표: $formula ${count}개" }
+                            ?: "목표: $formula"
+                    }
+                if (mission != null) {
+                    Text(
+                        text = mission,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
                 val made = session.moleculesMade.distinct().joinToString(", ")
                 if (made.isNotBlank()) {
                     Text(
@@ -356,8 +393,13 @@ private fun AnnotatedString.Builder.appendFormula(formula: String) {
 private fun formulaToAnnotated(formula: String): AnnotatedString =
     buildAnnotatedString { appendFormula(formula) }
 
-private fun formatTimestamp(epochMillis: Long): String =
-    SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.KOREA).format(Date(epochMillis))
+internal fun formatDexTimestamp(
+    epochMillis: Long,
+    timeZone: TimeZone = TimeZone.getDefault(),
+): String =
+    SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.KOREA).apply {
+        this.timeZone = timeZone
+    }.format(Date(epochMillis))
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 720)
 @Composable

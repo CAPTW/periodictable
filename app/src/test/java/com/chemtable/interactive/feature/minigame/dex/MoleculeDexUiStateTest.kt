@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.TimeZone
 
 class MoleculeDexUiStateTest {
 
@@ -110,6 +111,18 @@ class MoleculeDexUiStateTest {
         assertEquals(900, session.score)
         assertEquals(true, session.success)
         assertEquals(listOf("CO2", "H2O"), session.moleculesMade)
+    }
+
+    @Test
+    fun formatDexTimestamp_usesProvidedTimezone() {
+        assertEquals(
+            "1970.01.01 00:00",
+            formatDexTimestamp(0L, TimeZone.getTimeZone("UTC")),
+        )
+        assertEquals(
+            "1970.01.01 09:00",
+            formatDexTimestamp(0L, TimeZone.getTimeZone("Asia/Seoul")),
+        )
     }
 
     private fun term(id: String, label: String) = GlossaryTerm(
