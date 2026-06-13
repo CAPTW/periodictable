@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.chemtable.interactive.core.model.Element
 import com.chemtable.interactive.core.model.GlossaryTerm
 import com.chemtable.interactive.core.util.MolarMassCalculator
+import com.chemtable.interactive.domain.model.GameResultRecord
 import com.chemtable.interactive.domain.usecase.GetElementsUseCase
 import com.chemtable.interactive.domain.usecase.GetGlossaryUseCase
+import com.chemtable.interactive.domain.usecase.RecordGameResultUseCase
 import com.chemtable.interactive.feature.minigame.engine.BoardEngine
 import com.chemtable.interactive.feature.minigame.engine.FormulaMassResolver
 import com.chemtable.interactive.feature.minigame.model.Direction
@@ -35,13 +37,14 @@ import kotlin.random.Random
  *
  * - 원소 데이터는 GetElementsUseCase 로 받아 스폰 풀을 구성한다.
  * - 분자량은 기존 MolarMassCalculator 를 감싼 FormulaMassResolver 로 계산한다(엔진은 순수 유지).
- * - MVP: Room/DB/도감/최고점수 없음. 튜토리얼 노출 여부는 세션 메모리 플래그.
+ * - Phase 3A: 결과 기록은 Room-backed use case 로 넘긴다. 튜토리얼 노출 여부는 세션 메모리 플래그.
  */
 @HiltViewModel
 class MoleculeGameViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     getElementsUseCase: GetElementsUseCase,
     getGlossaryUseCase: GetGlossaryUseCase,
+    private val recordGameResultUseCase: RecordGameResultUseCase,
     private val molarMassCalculator: MolarMassCalculator,
     private val moleculeElementLinkResolver: MoleculeElementLinkResolver,
     private val moleculeGlossaryLinkResolver: MoleculeGlossaryLinkResolver,
@@ -60,6 +63,7 @@ class MoleculeGameViewModel @Inject constructor(
     private var engine: BoardEngine? = null
     private var hasSeenTutorial = false
     private val madeCount = mutableMapOf<String, Int>()
+    private var resultRecordedForSession = false
 
     init {
         viewModelScope.launch {
@@ -136,6 +140,7 @@ class MoleculeGameViewModel @Inject constructor(
     private fun startGame() {
         val activeEngine = engine ?: return
         madeCount.clear()
+        resultRecordedForSession = false
         val startSpec = startElementAtomicNumber?.let { targetId ->
             elements.find { it.atomicNumber == targetId }?.let { elem ->
                 SpawnableElement(
@@ -206,7 +211,32 @@ class MoleculeGameViewModel @Inject constructor(
             val label = result.mergedFormulas.joinToString(" + ")
             viewModelScope.launch { _effects.send(GameEffect.MergeSuccess(label, result.gainedScore)) }
         }
+        if (newPhase == GamePhase.RESULT) {
+            recordResultIfNeeded(_uiState.value)
+        }
     }
+
+    private fun recordResultIfNeeded(state: GameUiState) {
+        if (state.phase != GamePhase.RESULT || resultRecordedForSession) return
+        resultRecordedForSession = true
+
+        val record = GameResultRecord(
+            score = state.score,
+            success = state.resultSuccess,
+            difficulty = state.difficulty.name,
+            missionFormula = state.missionTarget?.formula,
+            missionTargetCount = state.missionTarget?.count,
+            playedAt = System.currentTimeMillis(),
+            moleculesMade = madeMoleculesForRecord(),
+        )
+
+        viewModelScope.launch {
+            runCatching { recordGameResultUseCase(record) }
+        }
+    }
+
+    private fun madeMoleculesForRecord(): List<String> =
+        madeCount.entries.flatMap { (formula, count) -> List(count) { formula } }
 
     private fun discoveredMoleculesFor(formulas: List<String>) =
         moleculeElementLinkResolver.discoveredMoleculesFor(formulas, elements).map { molecule ->

@@ -1,12 +1,14 @@
 package com.chemtable.interactive.app.di
 
 import com.chemtable.interactive.data.repository.ElementRepositoryImpl
+import com.chemtable.interactive.data.repository.GameStatsRepositoryImpl
 import com.chemtable.interactive.data.repository.GlossaryRepositoryImpl
 import com.chemtable.interactive.data.repository.IsotopeRepositoryImpl
 import com.chemtable.interactive.data.repository.CalcHistoryRepositoryImpl
 import com.chemtable.interactive.data.repository.NoteRepositoryImpl
 import com.chemtable.interactive.domain.repository.CalcHistoryRepository
 import com.chemtable.interactive.domain.repository.ElementRepository
+import com.chemtable.interactive.domain.repository.GameStatsRepository
 import com.chemtable.interactive.domain.repository.GlossaryRepository
 import com.chemtable.interactive.domain.repository.IsotopeRepository
 import com.chemtable.interactive.domain.repository.NoteRepository
@@ -32,4 +34,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindCalcHistoryRepository(impl: CalcHistoryRepositoryImpl): CalcHistoryRepository
+
+    @Binds
+    abstract fun bindGameStatsRepository(impl: GameStatsRepositoryImpl): GameStatsRepository
 }

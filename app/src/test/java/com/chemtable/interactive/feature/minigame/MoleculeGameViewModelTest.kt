@@ -9,16 +9,26 @@ import com.chemtable.interactive.core.model.GlossaryCategory
 import com.chemtable.interactive.core.model.GlossaryTerm
 import com.chemtable.interactive.core.util.FormulaParser
 import com.chemtable.interactive.core.util.MolarMassCalculator
+import com.chemtable.interactive.domain.model.GameMoleculeDiscovery
+import com.chemtable.interactive.domain.model.GameResultRecord
+import com.chemtable.interactive.domain.model.GameSession
 import com.chemtable.interactive.domain.repository.ElementRepository
+import com.chemtable.interactive.domain.repository.GameStatsRepository
 import com.chemtable.interactive.domain.repository.GlossaryRepository
 import com.chemtable.interactive.domain.usecase.GetElementsUseCase
 import com.chemtable.interactive.domain.usecase.GetGlossaryUseCase
+import com.chemtable.interactive.domain.usecase.RecordGameResultUseCase
+import com.chemtable.interactive.feature.minigame.engine.BoardEngine
+import com.chemtable.interactive.feature.minigame.engine.FormulaMassResolver
 import com.chemtable.interactive.feature.minigame.model.BoardState
+import com.chemtable.interactive.feature.minigame.model.Direction
 import com.chemtable.interactive.feature.minigame.model.ElementBlock
 import com.chemtable.interactive.feature.minigame.model.GameEvent
 import com.chemtable.interactive.feature.minigame.model.GamePhase
 import com.chemtable.interactive.feature.minigame.model.GameUiState
+import com.chemtable.interactive.feature.minigame.model.MissionTarget
 import com.chemtable.interactive.feature.minigame.model.MoleculeBlock
+import com.chemtable.interactive.feature.minigame.model.SpawnableElement
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -26,9 +36,11 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.lang.reflect.Field
+import kotlin.random.Random
 
 class MoleculeGameViewModelTest {
 
@@ -173,15 +185,16 @@ class MoleculeGameViewModelTest {
     private val glossaryLinkResolver = MoleculeGlossaryLinkResolver()
 
     private lateinit var viewModel: MoleculeGameViewModel
-
-
+    private lateinit var gameStatsRepository: FakeGameStatsRepository
 
     @Before
     fun setUp() {
+        gameStatsRepository = FakeGameStatsRepository()
         viewModel = MoleculeGameViewModel(
             savedStateHandle = SavedStateHandle(),
             getElementsUseCase = getElementsUseCase,
             getGlossaryUseCase = getGlossaryUseCase,
+            recordGameResultUseCase = RecordGameResultUseCase(gameStatsRepository),
             molarMassCalculator = molarMassCalculator,
             moleculeElementLinkResolver = elementLinkResolver,
             moleculeGlossaryLinkResolver = glossaryLinkResolver
@@ -199,6 +212,101 @@ class MoleculeGameViewModelTest {
     private fun forceSetPlayingBoard(board: BoardState) {
         forceSetState { it.copy(phase = GamePhase.PLAYING, board = board) }
     }
+
+    private fun forceSetEngine(engine: BoardEngine) {
+        val field: Field = MoleculeGameViewModel::class.java.getDeclaredField("engine")
+        field.isAccessible = true
+        field.set(viewModel, engine)
+    }
+
+    private fun h2oSuccessBoard(): BoardState {
+        val firstHydrogenPair = MoleculeBlock(
+            id = 1L,
+            formula = "H2",
+            massScore = 2.016,
+            composition = mapOf("H" to 2)
+        )
+        val firstOxygen = ElementBlock(
+            id = 2L,
+            atomicNumber = 8,
+            symbol = "O",
+            molarMass = 15.999
+        )
+        val secondHydrogenPair = MoleculeBlock(
+            id = 3L,
+            formula = "H2",
+            massScore = 2.016,
+            composition = mapOf("H" to 2)
+        )
+        val secondOxygen = ElementBlock(
+            id = 4L,
+            atomicNumber = 8,
+            symbol = "O",
+            molarMass = 15.999
+        )
+        return BoardState(
+            size = 4,
+            grid = listOf(
+                listOf(firstHydrogenPair, firstOxygen, secondHydrogenPair, secondOxygen),
+                listOf(null, null, null, null),
+                listOf(null, null, null, null),
+                listOf(null, null, null, null)
+            )
+        )
+    }
+
+    private fun forceSetH2oMissionBoard(score: Int = 0) {
+        forceSetState {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                board = h2oSuccessBoard(),
+                score = score,
+                combo = 0,
+                missionTarget = MissionTarget(formula = "H2O", count = 2, progress = 0),
+                discoveredMolecules = emptyList(),
+                resultSuccess = false,
+                selectedMoleculeSheet = null,
+            )
+        }
+    }
+
+    private fun gameOverAfterMoveBoard(): BoardState {
+        fun carbon(id: Long) = ElementBlock(
+            id = id,
+            atomicNumber = 6,
+            symbol = "C",
+            molarMass = 12.011
+        )
+        fun sodium(id: Long) = ElementBlock(
+            id = id,
+            atomicNumber = 11,
+            symbol = "Na",
+            molarMass = 22.99
+        )
+        return BoardState(
+            size = 4,
+            grid = listOf(
+                listOf(null, carbon(1), sodium(2), carbon(3)),
+                listOf(sodium(4), carbon(5), sodium(6), carbon(7)),
+                listOf(carbon(8), sodium(9), carbon(10), sodium(11)),
+                listOf(sodium(12), carbon(13), sodium(14), carbon(15))
+            )
+        )
+    }
+
+    private fun noRecipeGameOverEngine(): BoardEngine = BoardEngine(
+        resolver = FormulaMassResolver { 0.0 },
+        spawnPool = listOf(
+            SpawnableElement(
+                atomicNumber = 6,
+                symbol = "C",
+                nameKo = "탄소",
+                molarMass = 12.011,
+                category = ElementCategory.NONMETAL
+            )
+        ),
+        random = Random(0L)
+    )
 
     @Test
     fun blockTapped_withMoleculeBlock_updatesSelectedMoleculeSheet() = runBlocking {
@@ -339,5 +447,112 @@ class MoleculeGameViewModelTest {
         // Then
         assertNull(viewModel.uiState.value.selectedMoleculeSheet)
         assertEquals(GamePhase.PLAYING, viewModel.uiState.value.phase)
+    }
+
+    @Test
+    fun swipeIntoResult_recordsGameResultOnceWithResultFields() = runBlocking {
+        // Given
+        val before = System.currentTimeMillis()
+        forceSetH2oMissionBoard(score = 12)
+
+        // When
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+        val after = System.currentTimeMillis()
+
+        // Then
+        assertEquals(GamePhase.RESULT, viewModel.uiState.value.phase)
+        assertEquals(1, gameStatsRepository.records.size)
+        val record = gameStatsRepository.records.single()
+        assertEquals(48, record.score)
+        assertEquals(true, record.success)
+        assertEquals("BEGINNER", record.difficulty)
+        assertEquals("H2O", record.missionFormula)
+        assertEquals(2, record.missionTargetCount)
+        assertEquals(listOf("H2O", "H2O"), record.moleculesMade)
+        assertTrue(record.playedAt in before..after)
+    }
+
+    @Test
+    fun restart_resetsResultRecordGuardForNextSession() = runBlocking {
+        // Given
+        forceSetH2oMissionBoard()
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+        assertEquals(1, gameStatsRepository.records.size)
+
+        // When
+        viewModel.onEvent(GameEvent.Restart)
+        forceSetH2oMissionBoard()
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        // Then
+        assertEquals(2, gameStatsRepository.records.size)
+    }
+
+    @Test
+    fun recordFailure_doesNotCrashResultTransition() = runBlocking {
+        // Given
+        gameStatsRepository.throwOnRecord = true
+        forceSetH2oMissionBoard()
+
+        // When
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        // Then
+        assertEquals(GamePhase.RESULT, viewModel.uiState.value.phase)
+        assertEquals(1, gameStatsRepository.recordAttempts)
+        assertEquals(emptyList<GameResultRecord>(), gameStatsRepository.records)
+    }
+
+    @Test
+    fun swipeIntoGameOver_recordsFailedGameResult() = runBlocking {
+        // Given
+        forceSetEngine(noRecipeGameOverEngine())
+        forceSetState {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                board = gameOverAfterMoveBoard(),
+                score = 77,
+                combo = 0,
+                missionTarget = MissionTarget(formula = "H2O", count = 2, progress = 0),
+                discoveredMolecules = emptyList(),
+                resultSuccess = false,
+                selectedMoleculeSheet = null,
+            )
+        }
+
+        // When
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        // Then
+        assertEquals(GamePhase.RESULT, viewModel.uiState.value.phase)
+        assertEquals(1, gameStatsRepository.records.size)
+        val record = gameStatsRepository.records.single()
+        assertEquals(77, record.score)
+        assertEquals(false, record.success)
+        assertEquals("BEGINNER", record.difficulty)
+        assertEquals("H2O", record.missionFormula)
+        assertEquals(2, record.missionTargetCount)
+        assertEquals(emptyList<String>(), record.moleculesMade)
+    }
+
+    private class FakeGameStatsRepository : GameStatsRepository {
+        val records = mutableListOf<GameResultRecord>()
+        var recordAttempts = 0
+        var throwOnRecord = false
+
+        override fun observeDiscoveredMolecules(): Flow<List<GameMoleculeDiscovery>> = flowOf(emptyList())
+
+        override fun observeRecentSessions(limit: Int): Flow<List<GameSession>> = flowOf(emptyList())
+
+        override fun observeHighScore(): Flow<Int?> = flowOf(null)
+
+        override suspend fun getHighScore(): Int? = null
+
+        override suspend fun recordGameResult(record: GameResultRecord) {
+            recordAttempts++
+            if (throwOnRecord) error("record failed")
+            records += record
+        }
     }
 }
