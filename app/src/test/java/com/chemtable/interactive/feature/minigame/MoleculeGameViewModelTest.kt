@@ -22,6 +22,7 @@ import com.chemtable.interactive.feature.minigame.engine.BoardEngine
 import com.chemtable.interactive.feature.minigame.engine.FormulaMassResolver
 import com.chemtable.interactive.feature.minigame.model.BoardState
 import com.chemtable.interactive.feature.minigame.model.Direction
+import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.ElementBlock
 import com.chemtable.interactive.feature.minigame.model.GameEvent
 import com.chemtable.interactive.feature.minigame.model.GamePhase
@@ -149,6 +150,8 @@ class MoleculeGameViewModelTest {
 
     private val elements = listOf(
         createElement(1, "H", name = "Hydrogen", nameKo = "수소", category = ElementCategory.NONMETAL, molarMass = 1.008, period = 1, group = 1),
+        createElement(6, "C", name = "Carbon", nameKo = "탄소", category = ElementCategory.NONMETAL, molarMass = 12.011, period = 2, group = 14),
+        createElement(7, "N", name = "Nitrogen", nameKo = "질소", category = ElementCategory.NONMETAL, molarMass = 14.007, period = 2, group = 15),
         createElement(8, "O", name = "Oxygen", nameKo = "산소", category = ElementCategory.NONMETAL, molarMass = 15.999, period = 2, group = 16),
         createElement(11, "Na", name = "Sodium", nameKo = "나트륨", category = ElementCategory.ALKALI_METAL, molarMass = 22.99, period = 3, group = 1),
         createElement(17, "Cl", name = "Chlorine", nameKo = "염소", category = ElementCategory.HALOGEN, molarMass = 35.45, period = 3, group = 17)
@@ -290,6 +293,30 @@ class MoleculeGameViewModelTest {
                 listOf(sodium(4), carbon(5), sodium(6), carbon(7)),
                 listOf(carbon(8), sodium(9), carbon(10), sodium(11)),
                 listOf(sodium(12), carbon(13), sodium(14), carbon(15))
+            )
+        )
+    }
+
+    private fun validNonMissionMoveBoard(): BoardState {
+        val firstHydrogen = ElementBlock(
+            id = 1L,
+            atomicNumber = 1,
+            symbol = "H",
+            molarMass = 1.008
+        )
+        val secondHydrogen = ElementBlock(
+            id = 2L,
+            atomicNumber = 1,
+            symbol = "H",
+            molarMass = 1.008
+        )
+        return BoardState(
+            size = 4,
+            grid = listOf(
+                listOf(firstHydrogen, secondHydrogen, null, null),
+                listOf(null, null, null, null),
+                listOf(null, null, null, null),
+                listOf(null, null, null, null)
             )
         )
     }
@@ -447,6 +474,127 @@ class MoleculeGameViewModelTest {
         // Then
         assertNull(viewModel.uiState.value.selectedMoleculeSheet)
         assertEquals(GamePhase.PLAYING, viewModel.uiState.value.phase)
+    }
+
+    @Test
+    fun selectDifficulty_updatesStateWhileIntro() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
+
+        assertEquals(Difficulty.INTERMEDIATE, viewModel.uiState.value.difficulty)
+        assertEquals(GamePhase.INTRO, viewModel.uiState.value.phase)
+    }
+
+    @Test
+    fun selectDifficulty_isIgnoredWhilePlaying() = runBlocking {
+        forceSetState { it.copy(phase = GamePhase.PLAYING, difficulty = Difficulty.BEGINNER) }
+
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.ADVANCED))
+
+        assertEquals(Difficulty.BEGINNER, viewModel.uiState.value.difficulty)
+    }
+
+    @Test
+    fun startGame_afterSelectingIntermediateUsesIntermediateMissionConfig() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
+
+        viewModel.onEvent(GameEvent.StartGame)
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.PLAYING, state.phase)
+        assertEquals(Difficulty.INTERMEDIATE, state.difficulty)
+        assertEquals(MissionTarget(formula = "CO2", count = 1, progress = 0), state.missionTarget)
+        assertNull(state.movesLeft)
+    }
+
+    @Test
+    fun startGame_afterSelectingAdvancedSetsMoveLimit() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.ADVANCED))
+
+        viewModel.onEvent(GameEvent.StartGame)
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.PLAYING, state.phase)
+        assertEquals(Difficulty.ADVANCED, state.difficulty)
+        assertEquals(MissionTarget(formula = "CO2", count = 2, progress = 0), state.missionTarget)
+        assertEquals(35, state.movesLeft)
+    }
+
+    @Test
+    fun validMove_decreasesMovesLeftWhenMoveLimitExists() = runBlocking {
+        forceSetState {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                board = validNonMissionMoveBoard(),
+                difficulty = Difficulty.ADVANCED,
+                missionTarget = MissionTarget(formula = "CO2", count = 2, progress = 0),
+                movesLeft = 35,
+            )
+        }
+
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        assertEquals(34, viewModel.uiState.value.movesLeft)
+        assertEquals(GamePhase.PLAYING, viewModel.uiState.value.phase)
+    }
+
+    @Test
+    fun invalidMove_doesNotDecreaseMovesLeft() = runBlocking {
+        forceSetState {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                board = BoardState.empty(4),
+                difficulty = Difficulty.ADVANCED,
+                missionTarget = MissionTarget(formula = "CO2", count = 2, progress = 0),
+                movesLeft = 35,
+            )
+        }
+
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        assertEquals(35, viewModel.uiState.value.movesLeft)
+        assertEquals(GamePhase.PLAYING, viewModel.uiState.value.phase)
+    }
+
+    @Test
+    fun moveLimitReachingZeroEndsAsFailedResultWhenMissionIncomplete() = runBlocking {
+        forceSetState {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                board = validNonMissionMoveBoard(),
+                difficulty = Difficulty.ADVANCED,
+                missionTarget = MissionTarget(formula = "CO2", count = 2, progress = 0),
+                movesLeft = 1,
+                resultSuccess = false,
+            )
+        }
+
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        assertEquals(0, viewModel.uiState.value.movesLeft)
+        assertEquals(GamePhase.RESULT, viewModel.uiState.value.phase)
+        assertEquals(false, viewModel.uiState.value.resultSuccess)
+    }
+
+    @Test
+    fun resultRecordingUsesSelectedDifficulty() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
+        forceSetH2oMissionBoard()
+
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        val record = gameStatsRepository.records.single()
+        assertEquals("INTERMEDIATE", record.difficulty)
+    }
+
+    @Test
+    fun restartKeepsSelectedDifficultyForNextGame() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.ADVANCED))
+        viewModel.onEvent(GameEvent.StartGame)
+
+        viewModel.onEvent(GameEvent.Restart)
+
+        assertEquals(Difficulty.ADVANCED, viewModel.uiState.value.difficulty)
+        assertEquals(35, viewModel.uiState.value.movesLeft)
     }
 
     @Test

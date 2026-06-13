@@ -12,11 +12,13 @@ import com.chemtable.interactive.domain.usecase.GetGlossaryUseCase
 import com.chemtable.interactive.domain.usecase.RecordGameResultUseCase
 import com.chemtable.interactive.feature.minigame.engine.BoardEngine
 import com.chemtable.interactive.feature.minigame.engine.FormulaMassResolver
+import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.Direction
 import com.chemtable.interactive.feature.minigame.model.GameEffect
 import com.chemtable.interactive.feature.minigame.model.GameEvent
 import com.chemtable.interactive.feature.minigame.model.GamePhase
 import com.chemtable.interactive.feature.minigame.model.GameUiState
+import com.chemtable.interactive.feature.minigame.model.MissionDifficultyConfigs
 import com.chemtable.interactive.feature.minigame.model.MissionTarget
 import com.chemtable.interactive.feature.minigame.model.SpawnableElement
 import com.chemtable.interactive.feature.minigame.model.MoleculeBlock
@@ -94,6 +96,7 @@ class MoleculeGameViewModel @Inject constructor(
         when (event) {
             GameEvent.StartGame -> startGame()
             GameEvent.Restart -> startGame()
+            is GameEvent.SelectDifficulty -> selectDifficulty(event.difficulty)
             is GameEvent.Swipe -> handleSwipe(event.direction)
             GameEvent.Pause -> _uiState.update {
                 if (it.phase == GamePhase.PLAYING) it.copy(phase = GamePhase.PAUSED) else it
@@ -126,19 +129,43 @@ class MoleculeGameViewModel @Inject constructor(
     }
 
     private fun rebuildEngine() {
+        engine = createEngineForDifficulty(_uiState.value.difficulty)
+    }
+
+    private fun createEngineForDifficulty(difficulty: Difficulty): BoardEngine {
+        val config = MissionDifficultyConfigs.forDifficulty(difficulty)
         val resolver = FormulaMassResolver { formula ->
             runCatching { molarMassCalculator.calculate(formula, elements).totalMolarMass }
                 .getOrDefault(0.0)
         }
-        engine = BoardEngine(
+        return BoardEngine(
             resolver = resolver,
-            spawnPool = buildSpawnPool(elements),
+            spawnPool = buildSpawnPool(elements, config.spawnSymbols),
             random = Random(System.nanoTime()),
         )
     }
 
+    private fun selectDifficulty(difficulty: Difficulty) {
+        var changed = false
+        _uiState.update { state ->
+            if (state.phase == GamePhase.INTRO && state.difficulty != difficulty) {
+                changed = true
+                state.copy(difficulty = difficulty)
+            } else {
+                state
+            }
+        }
+        if (changed) {
+            rebuildEngine()
+        }
+    }
+
     private fun startGame() {
-        val activeEngine = engine ?: return
+        if (elements.isEmpty()) return
+        val difficulty = _uiState.value.difficulty
+        val config = MissionDifficultyConfigs.forDifficulty(difficulty)
+        val activeEngine = createEngineForDifficulty(difficulty)
+        engine = activeEngine
         madeCount.clear()
         resultRecordedForSession = false
         val startSpec = startElementAtomicNumber?.let { targetId ->
@@ -152,7 +179,12 @@ class MoleculeGameViewModel @Inject constructor(
                 )
             }
         }
-        val board = activeEngine.seedBoard(INITIAL_BLOCKS, startSpec)
+        val mission = config.missionCandidates.first()
+        val board = activeEngine.seedBoard(
+            count = config.initialBlockCount,
+            startElementSpec = startSpec,
+            size = config.boardSize,
+        )
         val firstTime = !hasSeenTutorial
         hasSeenTutorial = true
         _uiState.update {
@@ -161,8 +193,8 @@ class MoleculeGameViewModel @Inject constructor(
                 board = board,
                 score = 0,
                 combo = 0,
-                missionTarget = MissionTarget(formula = MISSION_FORMULA, count = MISSION_COUNT, progress = 0),
-                movesLeft = null,
+                missionTarget = MissionTarget(formula = mission.formula, count = mission.count, progress = 0),
+                movesLeft = config.movesLeft,
                 discoveredMolecules = emptyList(),
                 resultSuccess = false,
                 showTutorial = firstTime,
@@ -189,9 +221,12 @@ class MoleculeGameViewModel @Inject constructor(
         val discovered = discoveredMoleculesFor(discoveredFormulas)
         val target = state.missionTarget?.copy(progress = madeCount[state.missionTarget.formula] ?: 0)
         val success = target?.isComplete == true
+        val movesLeft = state.movesLeft?.let { (it - 1).coerceAtLeast(0) }
+        val exhaustedMoves = movesLeft == 0
         val newPhase = when {
             success -> GamePhase.RESULT
             result.isGameOver -> GamePhase.RESULT
+            exhaustedMoves -> GamePhase.RESULT
             else -> GamePhase.PLAYING
         }
 
@@ -202,6 +237,7 @@ class MoleculeGameViewModel @Inject constructor(
                 combo = if (result.mergedFormulas.isNotEmpty()) it.combo + 1 else 0,
                 discoveredMolecules = discovered,
                 missionTarget = target,
+                movesLeft = movesLeft,
                 phase = newPhase,
                 resultSuccess = if (newPhase == GamePhase.RESULT) success else it.resultSuccess,
             )
@@ -245,9 +281,9 @@ class MoleculeGameViewModel @Inject constructor(
             )
         }
 
-    private fun buildSpawnPool(source: List<Element>): List<SpawnableElement> {
+    private fun buildSpawnPool(source: List<Element>, spawnSymbols: List<String>): List<SpawnableElement> {
         val bySymbol = source.associateBy { it.symbol }
-        return SPAWN_SYMBOLS.mapNotNull { symbol ->
+        return spawnSymbols.mapNotNull { symbol ->
             bySymbol[symbol]?.let {
                 SpawnableElement(
                     atomicNumber = it.atomicNumber,
@@ -279,21 +315,5 @@ class MoleculeGameViewModel @Inject constructor(
                 )
             }
         }
-    }
-
-    companion object {
-        private const val INITIAL_BLOCKS = 4
-        private const val MISSION_FORMULA = "H2O"
-        private const val MISSION_COUNT = 2
-
-        // 레시피 달성 가능하도록 가중치를 둔 스폰 풀(중복 = 더 자주 등장).
-        private val SPAWN_SYMBOLS = listOf(
-            "H", "H", "H",
-            "O", "O", "O",
-            "N",
-            "C",
-            "Na", "Na",
-            "Cl", "Cl",
-        )
     }
 }
