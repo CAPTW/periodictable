@@ -33,6 +33,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -70,6 +71,7 @@ import com.chemtable.interactive.core.designsystem.theme.ChemTableTheme
 import com.chemtable.interactive.core.designsystem.theme.CustomShapes
 import com.chemtable.interactive.core.model.ElementCategory
 import com.chemtable.interactive.feature.minigame.model.BoardState
+import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.Direction
 import com.chemtable.interactive.feature.minigame.model.DiscoveredMolecule
 import com.chemtable.interactive.feature.minigame.model.ElementBlock
@@ -95,6 +97,18 @@ internal sealed interface FeedbackUi {
 private val BoardTapThreshold = 18.dp
 private val BoardSwipeThreshold = 40.dp
 private val BoardCellPadding = 3.dp
+
+private data class DifficultyOptionUi(
+    val difficulty: Difficulty,
+    val label: String,
+    val description: String,
+)
+
+private val DifficultyOptions = listOf(
+    DifficultyOptionUi(Difficulty.BEGINNER, "초급", "H/O 중심, 물과 소금부터"),
+    DifficultyOptionUi(Difficulty.INTERMEDIATE, "중급", "C/N 등장, CO₂ 목표"),
+    DifficultyOptionUi(Difficulty.ADVANCED, "고급", "이동 제한과 균형 잡힌 원소 풀"),
+)
 
 /**
  * 미니게임 진입점(하단바 없는 풀스크린 전제). Hilt ViewModel 을 연결하고
@@ -227,6 +241,11 @@ private fun IntroContent(state: GameUiState, onEvent: (GameEvent) -> Unit) {
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(20.dp))
+        DifficultySelector(
+            selected = state.difficulty,
+            onSelect = { onEvent(GameEvent.SelectDifficulty(it)) },
+        )
+        Spacer(Modifier.height(16.dp))
         Button(
             onClick = { onEvent(GameEvent.StartGame) },
             enabled = state.isEngineReady,
@@ -289,8 +308,45 @@ private fun HudBar(state: GameUiState, onPause: () -> Unit) {
             if (state.combo > 1) {
                 Text("콤보 x${state.combo}", style = MaterialTheme.typography.labelSmall)
             }
+            Text("난이도 ${state.difficulty.labelKo()}", style = MaterialTheme.typography.labelSmall)
+            state.movesLeft?.let { moves ->
+                Text("남은 이동 $moves", style = MaterialTheme.typography.labelSmall)
+            }
         }
         OutlinedButton(onClick = onPause) { Text("일시정지") }
+    }
+}
+
+@Composable
+private fun DifficultySelector(
+    selected: Difficulty,
+    onSelect: (Difficulty) -> Unit,
+) {
+    val selectedOption = DifficultyOptions.first { it.difficulty == selected }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("난이도", style = MaterialTheme.typography.labelMedium)
+        Spacer(Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            DifficultyOptions.forEach { option ->
+                FilterChip(
+                    selected = option.difficulty == selected,
+                    onClick = { onSelect(option.difficulty) },
+                    modifier = Modifier.semantics {
+                        contentDescription = "${option.label} 난이도 선택, ${option.description}"
+                    },
+                    label = { Text(option.label) },
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = selectedOption.description,
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -781,6 +837,12 @@ private fun formatMass(value: Double): String =
 
 private fun molarMassDescription(value: Double): String =
     if (value <= 0.0) "몰 질량 정보 없음" else "${formatMass(value)} g/mol"
+
+private fun Difficulty.labelKo(): String = when (this) {
+    Difficulty.BEGINNER -> "초급"
+    Difficulty.INTERMEDIATE -> "중급"
+    Difficulty.ADVANCED -> "고급"
+}
 
 internal fun boardCellForTap(
     tapX: Float,

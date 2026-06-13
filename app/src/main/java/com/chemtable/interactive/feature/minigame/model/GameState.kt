@@ -3,7 +3,7 @@ package com.chemtable.interactive.feature.minigame.model
 /** 게임 화면 단계. 결과/일시정지는 별도 라우트가 아니라 이 phase 로 표현한다(Phase 0 spec). */
 enum class GamePhase { INTRO, PLAYING, PAUSED, RESULT }
 
-/** 난이도. MVP 는 BEGINNER 만 사용하고 확장 여지를 남긴다. */
+/** Mission 난이도. Phase 3B.1 부터 Intro 선택과 config 분리에 사용한다. */
 enum class Difficulty { BEGINNER, INTERMEDIATE, ADVANCED }
 
 /** 목표 분자 미션. 예: H2O 를 2개 만들기. */
@@ -56,4 +56,3 @@ data class GameUiState(
         )
     }
 }
-
