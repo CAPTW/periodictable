@@ -44,7 +44,7 @@ class MissionDifficultyConfigsTest {
         assertEquals(Difficulty.ADVANCED, config.difficulty)
         assertEquals(4, config.boardSize)
         assertEquals(5, config.initialBlockCount)
-        assertEquals(35, config.movesLeft)
+        assertEquals(36, config.movesLeft)
         assertEquals("CO2", config.missionCandidates.first().formula)
         assertEquals(2, config.missionCandidates.first().count)
     }
