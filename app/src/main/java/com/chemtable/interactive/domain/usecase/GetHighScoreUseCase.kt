@@ -7,7 +7,15 @@ import javax.inject.Inject
 class GetHighScoreUseCase @Inject constructor(
     private val repository: GameStatsRepository
 ) {
-    operator fun invoke(): Flow<Int?> = repository.observeHighScore()
+    operator fun invoke(difficulty: String? = null): Flow<Int?> =
+        difficulty
+            ?.takeIf { it.isNotBlank() }
+            ?.let { repository.observeHighScoreByDifficulty(it) }
+            ?: repository.observeHighScore()
 
-    suspend fun current(): Int? = repository.getHighScore()
+    suspend fun current(difficulty: String? = null): Int? =
+        difficulty
+            ?.takeIf { it.isNotBlank() }
+            ?.let { repository.getHighScoreByDifficulty(it) }
+            ?: repository.getHighScore()
 }

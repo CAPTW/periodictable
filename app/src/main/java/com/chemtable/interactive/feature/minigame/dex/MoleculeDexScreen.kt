@@ -97,6 +97,11 @@ internal fun MoleculeDexContent(
         item {
             MoleculeDexSummary(state = state)
         }
+        if (state.difficultyHighScores.isNotEmpty()) {
+            item {
+                DifficultyHighScoresCard(scores = state.difficultyHighScores)
+            }
+        }
         if (state.errorMessage != null) {
             item {
                 ErrorDexState(message = state.errorMessage, onPlayMiniGame = onPlayMiniGame)
@@ -165,11 +170,34 @@ private fun MoleculeDexSummary(state: MoleculeDexUiState) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SummaryMetric(label = "발견", value = "${state.discoveredCount}개")
-            SummaryMetric(label = "최고점수", value = state.highScore?.let { "${it}점" } ?: "-")
+            SummaryMetric(label = "전체 최고", value = state.highScore?.let { "${it}점" } ?: "-")
             SummaryMetric(
                 label = "최근 점수",
                 value = state.recentSessions.firstOrNull()?.let { "${it.score}점" } ?: "-",
             )
+        }
+    }
+}
+
+@Composable
+private fun DifficultyHighScoresCard(scores: List<MoleculeDexDifficultyScore>) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("난이도별 최고점수", style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                scores.forEach { score ->
+                    SummaryMetric(
+                        label = score.label,
+                        value = score.highScore?.let { "${it}점" } ?: "-",
+                    )
+                }
+            }
         }
     }
 }
@@ -353,7 +381,7 @@ private fun RecentSessionsCard(sessions: List<MoleculeDexSessionItem>) {
                     HorizontalDivider()
                 }
                 Text(
-                    text = "${if (session.success) "성공" else "종료"} · ${session.score}점 · ${formatDexTimestamp(session.playedAt)}",
+                    text = "${session.difficultyLabel} · ${if (session.success) "성공" else "종료"} · ${session.score}점 · ${formatDexTimestamp(session.playedAt)}",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 val mission = session.missionFormula
@@ -407,6 +435,11 @@ private fun MoleculeDexPreview() {
     val state = MoleculeDexUiState(
         isLoading = false,
         highScore = 220,
+        difficultyHighScores = listOf(
+            MoleculeDexDifficultyScore("BEGINNER", "초급", 120),
+            MoleculeDexDifficultyScore("INTERMEDIATE", "중급", 220),
+            MoleculeDexDifficultyScore("ADVANCED", "고급", null),
+        ),
         discoveries = listOf(
             MoleculeDexItem(
                 formula = "H2O",
@@ -429,6 +462,7 @@ private fun MoleculeDexPreview() {
                 score = 220,
                 success = true,
                 difficulty = "BEGINNER",
+                difficultyLabel = "초급",
                 missionFormula = "H2O",
                 missionTargetCount = 2,
                 playedAt = 1_700_000_360_000L,

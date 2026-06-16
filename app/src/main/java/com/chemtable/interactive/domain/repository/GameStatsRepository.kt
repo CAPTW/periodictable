@@ -9,6 +9,8 @@ interface GameStatsRepository {
     fun observeDiscoveredMolecules(): Flow<List<GameMoleculeDiscovery>>
     fun observeRecentSessions(limit: Int = 10): Flow<List<GameSession>>
     fun observeHighScore(): Flow<Int?>
+    fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?>
     suspend fun getHighScore(): Int?
+    suspend fun getHighScoreByDifficulty(difficulty: String): Int?
     suspend fun recordGameResult(record: GameResultRecord)
 }

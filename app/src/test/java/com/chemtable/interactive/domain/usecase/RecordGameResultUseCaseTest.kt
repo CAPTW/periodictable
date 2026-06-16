@@ -40,7 +40,11 @@ class RecordGameResultUseCaseTest {
 
         override fun observeHighScore(): Flow<Int?> = flowOf(null)
 
+        override fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?> = flowOf(null)
+
         override suspend fun getHighScore(): Int? = null
+
+        override suspend fun getHighScoreByDifficulty(difficulty: String): Int? = null
 
         override suspend fun recordGameResult(record: GameResultRecord) {
             recorded = record

@@ -69,12 +69,17 @@ class MoleculeDexUiStateTest {
                 ),
             ),
             highScore = 900,
+            difficultyHighScores = mapOf(
+                "BEGINNER" to 500,
+                "INTERMEDIATE" to 900,
+                "ADVANCED" to null,
+            ),
             recentSessions = listOf(
                 GameSession(
                     id = 7L,
                     score = 900,
                     success = true,
-                    difficulty = "BEGINNER",
+                    difficulty = "INTERMEDIATE",
                     missionFormula = "H2O",
                     missionTargetCount = 2,
                     playedAt = 400L,
@@ -110,7 +115,24 @@ class MoleculeDexUiStateTest {
         assertEquals(7L, session.id)
         assertEquals(900, session.score)
         assertEquals(true, session.success)
+        assertEquals("INTERMEDIATE", session.difficulty)
+        assertEquals("중급", session.difficultyLabel)
         assertEquals(listOf("CO2", "H2O"), session.moleculesMade)
+
+        assertEquals(
+            listOf(
+                MoleculeDexDifficultyScore("BEGINNER", "초급", 500),
+                MoleculeDexDifficultyScore("INTERMEDIATE", "중급", 900),
+                MoleculeDexDifficultyScore("ADVANCED", "고급", null),
+            ),
+            state.difficultyHighScores,
+        )
+    }
+
+    @Test
+    fun difficultyLabelFor_unknownDifficultyFallsBackToOriginalValue() {
+        assertEquals("CUSTOM", difficultyLabelFor("CUSTOM"))
+        assertEquals("알 수 없음", difficultyLabelFor(""))
     }
 
     @Test
