@@ -8,6 +8,7 @@ sealed interface GameEvent {
     data object Resume : GameEvent
     data object Restart : GameEvent
     data object Exit : GameEvent
+    data class TimerTick(val nowMillis: Long) : GameEvent
     data object SkipTutorial : GameEvent
     data object ShowTutorial : GameEvent
 

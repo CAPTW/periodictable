@@ -522,6 +522,14 @@ class MoleculeGameViewModelTest {
     fun initialState_usesMissionMode() = runBlocking {
         assertEquals(GameMode.MISSION, viewModel.uiState.value.mode)
         assertEquals(GamePhase.INTRO, viewModel.uiState.value.phase)
+        assertNull(viewModel.uiState.value.timeLeftMillis)
+        assertNull(viewModel.uiState.value.timeLimitMillis)
+        assertNull(viewModel.uiState.value.lastTimerTickAtMillis)
+    }
+
+    @Test
+    fun gameMode_includesTimeAttack() = runBlocking {
+        assertTrue(GameMode.entries.contains(GameMode.TIME_ATTACK))
     }
 
     @Test
@@ -564,6 +572,154 @@ class MoleculeGameViewModelTest {
         assertEquals(Difficulty.ADVANCED, state.difficulty)
         assertNull(state.missionTarget)
         assertNull(state.movesLeft)
+    }
+
+    @Test
+    fun startGame_afterSelectingTimeAttackSetsTimerAndClearsMissionAndMoveLimit() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.TIME_ATTACK))
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
+
+        viewModel.onEvent(GameEvent.StartGame)
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.PLAYING, state.phase)
+        assertEquals(GameMode.TIME_ATTACK, state.mode)
+        assertEquals(Difficulty.INTERMEDIATE, state.difficulty)
+        assertNull(state.missionTarget)
+        assertNull(state.movesLeft)
+        assertEquals(90_000L, state.timeLimitMillis)
+        assertEquals(90_000L, state.timeLeftMillis)
+        assertNull(state.lastTimerTickAtMillis)
+    }
+
+    @Test
+    fun timeAttackFirstTimerTickSetsLastTickWithoutDecrementing() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.TIME_ATTACK))
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
+        viewModel.onEvent(GameEvent.StartGame)
+        viewModel.onEvent(GameEvent.SkipTutorial)
+
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 1_000L))
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.PLAYING, state.phase)
+        assertEquals(90_000L, state.timeLeftMillis)
+        assertEquals(1_000L, state.lastTimerTickAtMillis)
+    }
+
+    @Test
+    fun timeAttackSecondTimerTickDecrementsByElapsedMillis() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.TIME_ATTACK))
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
+        viewModel.onEvent(GameEvent.StartGame)
+        viewModel.onEvent(GameEvent.SkipTutorial)
+
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 1_000L))
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 2_250L))
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.PLAYING, state.phase)
+        assertEquals(88_750L, state.timeLeftMillis)
+        assertEquals(2_250L, state.lastTimerTickAtMillis)
+    }
+
+    @Test
+    fun timeAttackTimerTickIsIgnoredWhilePaused() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.TIME_ATTACK))
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
+        viewModel.onEvent(GameEvent.StartGame)
+        viewModel.onEvent(GameEvent.SkipTutorial)
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 1_000L))
+
+        viewModel.onEvent(GameEvent.Pause)
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 5_000L))
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.PAUSED, state.phase)
+        assertEquals(90_000L, state.timeLeftMillis)
+        assertNull(state.lastTimerTickAtMillis)
+    }
+
+    @Test
+    fun timeAttackResumeResetsTickBaselineWithoutPausedElapsed() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.TIME_ATTACK))
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
+        viewModel.onEvent(GameEvent.StartGame)
+        viewModel.onEvent(GameEvent.SkipTutorial)
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 1_000L))
+        viewModel.onEvent(GameEvent.Pause)
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 5_000L))
+
+        viewModel.onEvent(GameEvent.Resume)
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 6_000L))
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.PLAYING, state.phase)
+        assertEquals(90_000L, state.timeLeftMillis)
+        assertEquals(6_000L, state.lastTimerTickAtMillis)
+    }
+
+    @Test
+    fun timeAttackTimerReachingZeroEndsAndRecordsTimeAttackResult() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.TIME_ATTACK))
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.ADVANCED))
+        viewModel.onEvent(GameEvent.StartGame)
+        viewModel.onEvent(GameEvent.SkipTutorial)
+
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 1_000L))
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 61_000L))
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.RESULT, state.phase)
+        assertEquals(0L, state.timeLeftMillis)
+        assertEquals(false, state.resultSuccess)
+        val record = gameStatsRepository.records.single()
+        assertEquals("TIME_ATTACK", record.mode)
+        assertEquals(false, record.success)
+        assertNull(record.missionFormula)
+        assertNull(record.missionTargetCount)
+    }
+
+    @Test
+    fun timeAttackTimerTickIsIgnoredWhileTutorialIsVisible() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.TIME_ATTACK))
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
+        viewModel.onEvent(GameEvent.StartGame)
+
+        viewModel.onEvent(GameEvent.TimerTick(nowMillis = 5_000L))
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.PLAYING, state.phase)
+        assertEquals(true, state.showTutorial)
+        assertEquals(90_000L, state.timeLeftMillis)
+        assertNull(state.lastTimerTickAtMillis)
+    }
+
+    @Test
+    fun timeAttackMergeDoesNotApplyMissionSuccessBonus() = runBlocking {
+        forceSetState {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                mode = GameMode.TIME_ATTACK,
+                board = h2oSuccessBoard(),
+                score = 0,
+                combo = 0,
+                missionTarget = null,
+                movesLeft = null,
+                timeLeftMillis = 90_000L,
+                timeLimitMillis = 90_000L,
+                lastTimerTickAtMillis = 1_000L,
+                discoveredMolecules = emptyList(),
+                resultSuccess = false,
+                selectedMoleculeSheet = null,
+            )
+        }
+
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        assertEquals(GamePhase.PLAYING, viewModel.uiState.value.phase)
+        assertEquals(36, viewModel.uiState.value.score)
+        assertEquals(emptyList<GameResultRecord>(), gameStatsRepository.records)
     }
 
     @Test

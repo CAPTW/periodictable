@@ -133,6 +133,7 @@ internal fun modeLabelFor(mode: String): String {
     return when (normalized.uppercase(Locale.ROOT)) {
         GameMode.MISSION.name -> "미션"
         GameMode.ENDLESS.name -> "엔들리스"
+        GameMode.TIME_ATTACK.name -> "타임어택"
         else -> normalized
     }
 }

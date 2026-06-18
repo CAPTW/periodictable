@@ -66,10 +66,12 @@ class MoleculeDexViewModel @Inject constructor(
     private val modeHighScores: Flow<Map<String, Int?>> = combine(
         getHighScoreUseCase(mode = GameMode.MISSION.name),
         getHighScoreUseCase(mode = GameMode.ENDLESS.name),
-    ) { mission, endless ->
+        getHighScoreUseCase(mode = GameMode.TIME_ATTACK.name),
+    ) { mission, endless, timeAttack ->
         mapOf(
             GameMode.MISSION.name to mission,
             GameMode.ENDLESS.name to endless,
+            GameMode.TIME_ATTACK.name to timeAttack,
         )
     }
 

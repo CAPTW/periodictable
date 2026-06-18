@@ -19,6 +19,7 @@ class MissionDifficultyConfigsTest {
         assertEquals(4, config.initialBlockCount)
         assertEquals(listOf("H", "H", "H", "H", "O", "O", "O", "Na", "Cl"), config.spawnSymbols)
         assertEquals(null, config.movesLeft)
+        assertEquals(120_000L, config.timeAttackLimitMillis)
         assertEquals("H2O", config.missionCandidates.first().formula)
         assertEquals(2, config.missionCandidates.first().count)
     }
@@ -33,6 +34,7 @@ class MissionDifficultyConfigsTest {
         assertTrue(config.spawnSymbols.contains("C"))
         assertTrue(config.spawnSymbols.contains("N"))
         assertEquals(null, config.movesLeft)
+        assertEquals(90_000L, config.timeAttackLimitMillis)
         assertEquals("CO2", config.missionCandidates.first().formula)
         assertEquals(1, config.missionCandidates.first().count)
     }
@@ -45,6 +47,7 @@ class MissionDifficultyConfigsTest {
         assertEquals(4, config.boardSize)
         assertEquals(5, config.initialBlockCount)
         assertEquals(36, config.movesLeft)
+        assertEquals(60_000L, config.timeAttackLimitMillis)
         assertEquals("CO2", config.missionCandidates.first().formula)
         assertEquals(2, config.missionCandidates.first().count)
     }
@@ -57,6 +60,7 @@ class MissionDifficultyConfigsTest {
             val config = MissionDifficultyConfigs.forDifficulty(difficulty)
             assertTrue("${difficulty.name} spawn pool is empty", config.spawnSymbols.isNotEmpty())
             assertTrue("${difficulty.name} missions are empty", config.missionCandidates.isNotEmpty())
+            assertTrue("${difficulty.name} time attack limit must be positive", config.timeAttackLimitMillis > 0L)
             config.missionCandidates.forEach { target ->
                 assertTrue("${target.formula} is not recipe-backed", target.formula in productFormulas)
                 assertTrue("${target.formula} count must be positive", target.count > 0)

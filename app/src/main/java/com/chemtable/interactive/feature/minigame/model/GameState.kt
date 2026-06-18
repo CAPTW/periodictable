@@ -6,8 +6,8 @@ enum class GamePhase { INTRO, PLAYING, PAUSED, RESULT }
 /** Mission 난이도. Phase 3B.1 부터 Intro 선택과 config 분리에 사용한다. */
 enum class Difficulty { BEGINNER, INTERMEDIATE, ADVANCED }
 
-/** 게임 모드. Mission 은 목표 달성, Endless 는 보드가 막힐 때까지 점수를 쌓는 흐름이다. */
-enum class GameMode { MISSION, ENDLESS }
+/** 게임 모드. Mission 은 목표 달성, Endless/Time Attack 은 점수 도전 흐름이다. */
+enum class GameMode { MISSION, ENDLESS, TIME_ATTACK }
 
 /** 목표 분자 미션. 예: H2O 를 2개 만들기. */
 data class MissionTarget(
@@ -41,6 +41,9 @@ data class GameUiState(
     val resultSuccess: Boolean,
     val difficulty: Difficulty,
     val mode: GameMode,
+    val timeLeftMillis: Long? = null,
+    val timeLimitMillis: Long? = null,
+    val lastTimerTickAtMillis: Long? = null,
     val selectedMoleculeSheet: SelectedMoleculeSheet? = null,
 ) {
     companion object {
@@ -57,6 +60,9 @@ data class GameUiState(
             resultSuccess = false,
             difficulty = Difficulty.BEGINNER,
             mode = GameMode.MISSION,
+            timeLeftMillis = null,
+            timeLimitMillis = null,
+            lastTimerTickAtMillis = null,
             selectedMoleculeSheet = null,
         )
     }

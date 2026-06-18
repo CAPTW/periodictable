@@ -72,6 +72,7 @@ class MoleculeDexUiStateTest {
             modeHighScores = mapOf(
                 "MISSION" to 700,
                 "ENDLESS" to 900,
+                "TIME_ATTACK" to 650,
             ),
             difficultyHighScores = mapOf(
                 "BEGINNER" to 500,
@@ -84,7 +85,7 @@ class MoleculeDexUiStateTest {
                     score = 900,
                     success = true,
                     difficulty = "INTERMEDIATE",
-                    mode = "ENDLESS",
+                    mode = "TIME_ATTACK",
                     missionFormula = "H2O",
                     missionTargetCount = 2,
                     playedAt = 400L,
@@ -122,14 +123,15 @@ class MoleculeDexUiStateTest {
         assertEquals(true, session.success)
         assertEquals("INTERMEDIATE", session.difficulty)
         assertEquals("중급", session.difficultyLabel)
-        assertEquals("ENDLESS", session.mode)
-        assertEquals("엔들리스", session.modeLabel)
+        assertEquals("TIME_ATTACK", session.mode)
+        assertEquals("타임어택", session.modeLabel)
         assertEquals(listOf("CO2", "H2O"), session.moleculesMade)
 
         assertEquals(
             listOf(
                 MoleculeDexModeScore("MISSION", "미션", 700),
                 MoleculeDexModeScore("ENDLESS", "엔들리스", 900),
+                MoleculeDexModeScore("TIME_ATTACK", "타임어택", 650),
             ),
             state.modeHighScores,
         )
@@ -153,6 +155,7 @@ class MoleculeDexUiStateTest {
     fun modeLabelFor_mapsKnownModesAndFallsBackForUnknown() {
         assertEquals("미션", modeLabelFor("MISSION"))
         assertEquals("엔들리스", modeLabelFor("endless"))
+        assertEquals("타임어택", modeLabelFor("time_attack"))
         assertEquals("CUSTOM", modeLabelFor("CUSTOM"))
         assertEquals("알 수 없음", modeLabelFor(""))
     }
