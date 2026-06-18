@@ -466,6 +466,7 @@ private fun MoleculeDexPreview() {
         modeHighScores = listOf(
             MoleculeDexModeScore("MISSION", "미션", 180),
             MoleculeDexModeScore("ENDLESS", "엔들리스", 220),
+            MoleculeDexModeScore("TIME_ATTACK", "타임어택", 160),
         ),
         difficultyHighScores = listOf(
             MoleculeDexDifficultyScore("BEGINNER", "초급", 120),
