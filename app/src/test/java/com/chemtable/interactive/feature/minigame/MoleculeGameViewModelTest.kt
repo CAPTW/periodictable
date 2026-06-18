@@ -516,7 +516,7 @@ class MoleculeGameViewModelTest {
         assertEquals(GamePhase.PLAYING, state.phase)
         assertEquals(Difficulty.ADVANCED, state.difficulty)
         assertEquals(MissionTarget(formula = "CO2", count = 2, progress = 0), state.missionTarget)
-        assertEquals(35, state.movesLeft)
+        assertEquals(36, state.movesLeft)
     }
 
     @Test
@@ -527,13 +527,13 @@ class MoleculeGameViewModelTest {
                 board = validNonMissionMoveBoard(),
                 difficulty = Difficulty.ADVANCED,
                 missionTarget = MissionTarget(formula = "CO2", count = 2, progress = 0),
-                movesLeft = 35,
+                movesLeft = 36,
             )
         }
 
         viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
 
-        assertEquals(34, viewModel.uiState.value.movesLeft)
+        assertEquals(35, viewModel.uiState.value.movesLeft)
         assertEquals(GamePhase.PLAYING, viewModel.uiState.value.phase)
     }
 
@@ -545,13 +545,13 @@ class MoleculeGameViewModelTest {
                 board = BoardState.empty(4),
                 difficulty = Difficulty.ADVANCED,
                 missionTarget = MissionTarget(formula = "CO2", count = 2, progress = 0),
-                movesLeft = 35,
+                movesLeft = 36,
             )
         }
 
         viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
 
-        assertEquals(35, viewModel.uiState.value.movesLeft)
+        assertEquals(36, viewModel.uiState.value.movesLeft)
         assertEquals(GamePhase.PLAYING, viewModel.uiState.value.phase)
     }
 
@@ -594,7 +594,7 @@ class MoleculeGameViewModelTest {
         viewModel.onEvent(GameEvent.Restart)
 
         assertEquals(Difficulty.ADVANCED, viewModel.uiState.value.difficulty)
-        assertEquals(35, viewModel.uiState.value.movesLeft)
+        assertEquals(36, viewModel.uiState.value.movesLeft)
     }
 
     @Test
@@ -612,7 +612,7 @@ class MoleculeGameViewModelTest {
         assertEquals(GamePhase.RESULT, viewModel.uiState.value.phase)
         assertEquals(1, gameStatsRepository.records.size)
         val record = gameStatsRepository.records.single()
-        assertEquals(48, record.score)
+        assertEquals(68, record.score)
         assertEquals(true, record.success)
         assertEquals("BEGINNER", record.difficulty)
         assertEquals("H2O", record.missionFormula)

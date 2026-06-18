@@ -41,13 +41,13 @@ object MissionDifficultyConfigs {
             Difficulty.ADVANCED -> MissionDifficultyConfig(
                 difficulty = Difficulty.ADVANCED,
                 initialBlockCount = 5,
-                spawnSymbols = listOf("H", "O", "C", "N", "Na", "Cl"),
+                spawnSymbols = listOf("H", "H", "O", "C", "N", "Na", "Cl"),
                 missionCandidates = listOf(
                     MissionTargetSpec("CO2", 2),
                     MissionTargetSpec("NaCl", 3),
                     MissionTargetSpec("H2O", 3),
                 ),
-                movesLeft = 35,
+                movesLeft = 36,
             )
         }
 }

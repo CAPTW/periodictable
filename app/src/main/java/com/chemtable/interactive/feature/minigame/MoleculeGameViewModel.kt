@@ -221,8 +221,16 @@ class MoleculeGameViewModel @Inject constructor(
         val discovered = discoveredMoleculesFor(discoveredFormulas)
         val target = state.missionTarget?.copy(progress = madeCount[state.missionTarget.formula] ?: 0)
         val success = target?.isComplete == true
+        val nextCombo = if (result.mergedFormulas.isNotEmpty()) state.combo + 1 else 0
+        val moveScore = calculateMoveScore(
+            mergedScore = result.gainedScore,
+            combo = nextCombo,
+            difficulty = state.difficulty,
+        )
         val movesLeft = state.movesLeft?.let { (it - 1).coerceAtLeast(0) }
         val exhaustedMoves = movesLeft == 0
+        val missionSuccessScore = if (success && !state.resultSuccess) calculateMissionSuccessBonus(state.difficulty) else 0
+        val finalMoveScore = moveScore + missionSuccessScore
         val newPhase = when {
             success -> GamePhase.RESULT
             result.isGameOver -> GamePhase.RESULT
@@ -233,8 +241,8 @@ class MoleculeGameViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 board = result.board,
-                score = it.score + result.gainedScore,
-                combo = if (result.mergedFormulas.isNotEmpty()) it.combo + 1 else 0,
+                score = it.score + finalMoveScore,
+                combo = nextCombo,
                 discoveredMolecules = discovered,
                 missionTarget = target,
                 movesLeft = movesLeft,
@@ -245,7 +253,14 @@ class MoleculeGameViewModel @Inject constructor(
 
         if (result.mergedFormulas.isNotEmpty()) {
             val label = result.mergedFormulas.joinToString(" + ")
-            viewModelScope.launch { _effects.send(GameEffect.MergeSuccess(label, result.gainedScore)) }
+            viewModelScope.launch {
+                _effects.send(GameEffect.MergeSuccess(label, moveScore))
+            }
+            if (missionSuccessScore > 0) {
+                viewModelScope.launch {
+                    _effects.send(GameEffect.MergeSuccess("미션 보너스", missionSuccessScore))
+                }
+            }
         }
         if (newPhase == GamePhase.RESULT) {
             recordResultIfNeeded(_uiState.value)
