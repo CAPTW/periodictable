@@ -16,6 +16,7 @@ import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.Direction
 import com.chemtable.interactive.feature.minigame.model.GameEffect
 import com.chemtable.interactive.feature.minigame.model.GameEvent
+import com.chemtable.interactive.feature.minigame.model.GameMode
 import com.chemtable.interactive.feature.minigame.model.GamePhase
 import com.chemtable.interactive.feature.minigame.model.GameUiState
 import com.chemtable.interactive.feature.minigame.model.MissionDifficultyConfigs
@@ -97,6 +98,7 @@ class MoleculeGameViewModel @Inject constructor(
             GameEvent.StartGame -> startGame()
             GameEvent.Restart -> startGame()
             is GameEvent.SelectDifficulty -> selectDifficulty(event.difficulty)
+            is GameEvent.SelectMode -> selectMode(event.mode)
             is GameEvent.Swipe -> handleSwipe(event.direction)
             GameEvent.Pause -> _uiState.update {
                 if (it.phase == GamePhase.PLAYING) it.copy(phase = GamePhase.PAUSED) else it
@@ -160,9 +162,17 @@ class MoleculeGameViewModel @Inject constructor(
         }
     }
 
+    private fun selectMode(mode: GameMode) {
+        _uiState.update { state ->
+            if (state.phase == GamePhase.INTRO) state.copy(mode = mode) else state
+        }
+    }
+
     private fun startGame() {
         if (elements.isEmpty()) return
-        val difficulty = _uiState.value.difficulty
+        val currentState = _uiState.value
+        val difficulty = currentState.difficulty
+        val mode = currentState.mode
         val config = MissionDifficultyConfigs.forDifficulty(difficulty)
         val activeEngine = createEngineForDifficulty(difficulty)
         engine = activeEngine
@@ -179,7 +189,7 @@ class MoleculeGameViewModel @Inject constructor(
                 )
             }
         }
-        val mission = config.missionCandidates.first()
+        val mission = if (mode == GameMode.MISSION) config.missionCandidates.first() else null
         val board = activeEngine.seedBoard(
             count = config.initialBlockCount,
             startElementSpec = startSpec,
@@ -193,8 +203,10 @@ class MoleculeGameViewModel @Inject constructor(
                 board = board,
                 score = 0,
                 combo = 0,
-                missionTarget = MissionTarget(formula = mission.formula, count = mission.count, progress = 0),
-                movesLeft = config.movesLeft,
+                missionTarget = mission?.let { spec ->
+                    MissionTarget(formula = spec.formula, count = spec.count, progress = 0)
+                },
+                movesLeft = if (mode == GameMode.MISSION) config.movesLeft else null,
                 discoveredMolecules = emptyList(),
                 resultSuccess = false,
                 showTutorial = firstTime,
@@ -210,6 +222,17 @@ class MoleculeGameViewModel @Inject constructor(
 
         val result = activeEngine.move(state.board, direction)
         if (!result.moved) {
+            if (result.isGameOver) {
+                _uiState.update {
+                    it.copy(
+                        phase = GamePhase.RESULT,
+                        resultSuccess = false,
+                        selectedMoleculeSheet = null,
+                    )
+                }
+                recordResultIfNeeded(_uiState.value)
+                return
+            }
             viewModelScope.launch { _effects.send(GameEffect.MergeRejected) }
             return
         }
@@ -275,6 +298,7 @@ class MoleculeGameViewModel @Inject constructor(
             score = state.score,
             success = state.resultSuccess,
             difficulty = state.difficulty.name,
+            mode = state.mode.name,
             missionFormula = state.missionTarget?.formula,
             missionTargetCount = state.missionTarget?.count,
             playedAt = System.currentTimeMillis(),

@@ -33,6 +33,11 @@ object DbMigrations {
         "CREATE INDEX IF NOT EXISTS index_game_sessions_difficulty ON game_sessions(difficulty)",
     )
 
+    internal val MIGRATION_5_6_SQL: List<String> = listOf(
+        "ALTER TABLE game_sessions ADD COLUMN mode TEXT NOT NULL DEFAULT 'MISSION'",
+        "CREATE INDEX IF NOT EXISTS index_game_sessions_mode ON game_sessions(mode)",
+    )
+
     val MIGRATION_2_3: Migration = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE elements ADD COLUMN latin_name TEXT")
@@ -139,6 +144,12 @@ object DbMigrations {
     val MIGRATION_4_5: Migration = object : Migration(4, 5) {
         override fun migrate(db: SupportSQLiteDatabase) {
             MIGRATION_4_5_SQL.forEach { statement -> db.execSQL(statement) }
+        }
+    }
+
+    val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            MIGRATION_5_6_SQL.forEach { statement -> db.execSQL(statement) }
         }
     }
 }

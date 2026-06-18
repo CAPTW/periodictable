@@ -40,4 +40,23 @@ class GameStatsMigrationSqlTest {
             assertTrue("Missing migration SQL fragment: $expected", sql.contains(expected))
         }
     }
+
+    @Test
+    fun migration5To6_hasExpectedVersionRange() {
+        assertEquals(5, DbMigrations.MIGRATION_5_6.startVersion)
+        assertEquals(6, DbMigrations.MIGRATION_5_6.endVersion)
+    }
+
+    @Test
+    fun migration5To6_addsSessionModeColumnAndIndex() {
+        val sql = DbMigrations.MIGRATION_5_6_SQL.joinToString("\n")
+
+        listOf(
+            "ALTER TABLE game_sessions ADD COLUMN mode TEXT NOT NULL DEFAULT 'MISSION'",
+            "index_game_sessions_mode",
+            "game_sessions(mode)",
+        ).forEach { expected ->
+            assertTrue("Missing migration SQL fragment: $expected", sql.contains(expected))
+        }
+    }
 }

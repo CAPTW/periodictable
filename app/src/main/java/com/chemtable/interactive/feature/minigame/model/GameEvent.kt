@@ -14,6 +14,9 @@ sealed interface GameEvent {
     /** Intro 에서 Mission 난이도를 선택. 플레이 중에는 적용하지 않는다. */
     data class SelectDifficulty(val difficulty: Difficulty) : GameEvent
 
+    /** Intro 에서 Mission/Endless 모드를 선택. 플레이 중에는 적용하지 않는다. */
+    data class SelectMode(val mode: GameMode) : GameEvent
+
     /** 만든 분자를 계산기로 보내 몰질량을 확인. */
     data class OpenCalculator(val formula: String) : GameEvent
 

@@ -5,6 +5,7 @@ data class GameSession(
     val score: Int,
     val success: Boolean,
     val difficulty: String,
+    val mode: String = "MISSION",
     val missionFormula: String?,
     val missionTargetCount: Int?,
     val playedAt: Long,

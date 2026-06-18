@@ -25,6 +25,7 @@ import com.chemtable.interactive.feature.minigame.model.Direction
 import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.ElementBlock
 import com.chemtable.interactive.feature.minigame.model.GameEvent
+import com.chemtable.interactive.feature.minigame.model.GameMode
 import com.chemtable.interactive.feature.minigame.model.GamePhase
 import com.chemtable.interactive.feature.minigame.model.GameUiState
 import com.chemtable.interactive.feature.minigame.model.MissionTarget
@@ -297,6 +298,30 @@ class MoleculeGameViewModelTest {
         )
     }
 
+    private fun alreadyGameOverBoard(): BoardState {
+        fun carbon(id: Long) = ElementBlock(
+            id = id,
+            atomicNumber = 6,
+            symbol = "C",
+            molarMass = 12.011
+        )
+        fun sodium(id: Long) = ElementBlock(
+            id = id,
+            atomicNumber = 11,
+            symbol = "Na",
+            molarMass = 22.99
+        )
+        return BoardState(
+            size = 4,
+            grid = listOf(
+                listOf(carbon(1), sodium(2), carbon(3), sodium(4)),
+                listOf(sodium(5), carbon(6), sodium(7), carbon(8)),
+                listOf(carbon(9), sodium(10), carbon(11), sodium(12)),
+                listOf(sodium(13), carbon(14), sodium(15), carbon(16))
+            )
+        )
+    }
+
     private fun validNonMissionMoveBoard(): BoardState {
         val firstHydrogen = ElementBlock(
             id = 1L,
@@ -494,6 +519,54 @@ class MoleculeGameViewModelTest {
     }
 
     @Test
+    fun initialState_usesMissionMode() = runBlocking {
+        assertEquals(GameMode.MISSION, viewModel.uiState.value.mode)
+        assertEquals(GamePhase.INTRO, viewModel.uiState.value.phase)
+    }
+
+    @Test
+    fun selectMode_updatesStateWhileIntro() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.ENDLESS))
+
+        assertEquals(GameMode.ENDLESS, viewModel.uiState.value.mode)
+        assertEquals(GamePhase.INTRO, viewModel.uiState.value.phase)
+    }
+
+    @Test
+    fun selectMode_isIgnoredWhilePlaying() = runBlocking {
+        forceSetState { it.copy(phase = GamePhase.PLAYING, mode = GameMode.MISSION) }
+
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.ENDLESS))
+
+        assertEquals(GameMode.MISSION, viewModel.uiState.value.mode)
+    }
+
+    @Test
+    fun startGame_keepsSelectedModeForSessionState() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.ENDLESS))
+
+        viewModel.onEvent(GameEvent.StartGame)
+
+        assertEquals(GamePhase.PLAYING, viewModel.uiState.value.phase)
+        assertEquals(GameMode.ENDLESS, viewModel.uiState.value.mode)
+    }
+
+    @Test
+    fun startGame_afterSelectingEndlessClearsMissionAndMoveLimit() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.ENDLESS))
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.ADVANCED))
+
+        viewModel.onEvent(GameEvent.StartGame)
+
+        val state = viewModel.uiState.value
+        assertEquals(GamePhase.PLAYING, state.phase)
+        assertEquals(GameMode.ENDLESS, state.mode)
+        assertEquals(Difficulty.ADVANCED, state.difficulty)
+        assertNull(state.missionTarget)
+        assertNull(state.movesLeft)
+    }
+
+    @Test
     fun startGame_afterSelectingIntermediateUsesIntermediateMissionConfig() = runBlocking {
         viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.INTERMEDIATE))
 
@@ -584,6 +657,63 @@ class MoleculeGameViewModelTest {
 
         val record = gameStatsRepository.records.single()
         assertEquals("INTERMEDIATE", record.difficulty)
+        assertEquals("MISSION", record.mode)
+    }
+
+    @Test
+    fun endlessMergeDoesNotApplyMissionSuccessBonus() = runBlocking {
+        forceSetState {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                mode = GameMode.ENDLESS,
+                board = h2oSuccessBoard(),
+                score = 0,
+                combo = 0,
+                missionTarget = null,
+                movesLeft = null,
+                discoveredMolecules = emptyList(),
+                resultSuccess = false,
+                selectedMoleculeSheet = null,
+            )
+        }
+
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        assertEquals(GamePhase.PLAYING, viewModel.uiState.value.phase)
+        assertEquals(36, viewModel.uiState.value.score)
+        assertEquals(emptyList<GameResultRecord>(), gameStatsRepository.records)
+    }
+
+    @Test
+    fun endlessGameOver_recordsEndlessResultWithoutMissionTarget() = runBlocking {
+        forceSetEngine(noRecipeGameOverEngine())
+        forceSetState {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                mode = GameMode.ENDLESS,
+                board = alreadyGameOverBoard(),
+                score = 77,
+                combo = 0,
+                missionTarget = null,
+                movesLeft = null,
+                discoveredMolecules = emptyList(),
+                resultSuccess = false,
+                selectedMoleculeSheet = null,
+            )
+        }
+
+        viewModel.onEvent(GameEvent.Swipe(Direction.LEFT))
+
+        assertEquals(GamePhase.RESULT, viewModel.uiState.value.phase)
+        assertEquals(false, viewModel.uiState.value.resultSuccess)
+        val record = gameStatsRepository.records.single()
+        assertEquals(77, record.score)
+        assertEquals(false, record.success)
+        assertEquals("BEGINNER", record.difficulty)
+        assertEquals("ENDLESS", record.mode)
+        assertNull(record.missionFormula)
+        assertNull(record.missionTargetCount)
+        assertEquals(emptyList<String>(), record.moleculesMade)
     }
 
     @Test
@@ -615,6 +745,7 @@ class MoleculeGameViewModelTest {
         assertEquals(68, record.score)
         assertEquals(true, record.success)
         assertEquals("BEGINNER", record.difficulty)
+        assertEquals("MISSION", record.mode)
         assertEquals("H2O", record.missionFormula)
         assertEquals(2, record.missionTargetCount)
         assertEquals(listOf("H2O", "H2O"), record.moleculesMade)
@@ -679,6 +810,7 @@ class MoleculeGameViewModelTest {
         assertEquals(77, record.score)
         assertEquals(false, record.success)
         assertEquals("BEGINNER", record.difficulty)
+        assertEquals("MISSION", record.mode)
         assertEquals("H2O", record.missionFormula)
         assertEquals(2, record.missionTargetCount)
         assertEquals(emptyList<String>(), record.moleculesMade)
@@ -697,9 +829,18 @@ class MoleculeGameViewModelTest {
 
         override fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?> = flowOf(null)
 
+        override fun observeHighScoreByMode(mode: String): Flow<Int?> = flowOf(null)
+
+        override fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String): Flow<Int?> =
+            flowOf(null)
+
         override suspend fun getHighScore(): Int? = null
 
         override suspend fun getHighScoreByDifficulty(difficulty: String): Int? = null
+
+        override suspend fun getHighScoreByMode(mode: String): Int? = null
+
+        override suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String): Int? = null
 
         override suspend fun recordGameResult(record: GameResultRecord) {
             recordAttempts++

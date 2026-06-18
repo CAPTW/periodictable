@@ -19,6 +19,10 @@ import androidx.room.PrimaryKey
             value = ["difficulty"],
             name = "index_game_sessions_difficulty",
         ),
+        Index(
+            value = ["mode"],
+            name = "index_game_sessions_mode",
+        ),
     ],
 )
 data class GameSessionEntity(
@@ -26,6 +30,7 @@ data class GameSessionEntity(
     val score: Int,
     val success: Boolean,
     val difficulty: String,
+    val mode: String,
     val missionFormula: String?,
     val missionTargetCount: Int?,
     val playedAt: Long,

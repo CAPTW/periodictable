@@ -30,10 +30,22 @@ class GameStatsRepositoryImpl @Inject constructor(
     override fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?> =
         dao.observeHighScoreByDifficulty(difficulty)
 
+    override fun observeHighScoreByMode(mode: String): Flow<Int?> =
+        dao.observeHighScoreByMode(mode)
+
+    override fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String): Flow<Int?> =
+        dao.observeHighScoreByDifficultyAndMode(difficulty, mode)
+
     override suspend fun getHighScore(): Int? = dao.getHighScore()
 
     override suspend fun getHighScoreByDifficulty(difficulty: String): Int? =
         dao.getHighScoreByDifficulty(difficulty)
+
+    override suspend fun getHighScoreByMode(mode: String): Int? =
+        dao.getHighScoreByMode(mode)
+
+    override suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String): Int? =
+        dao.getHighScoreByDifficultyAndMode(difficulty, mode)
 
     override suspend fun recordGameResult(record: GameResultRecord) {
         val normalizedMoleculesMade = normalizeGameResultMolecules(record.moleculesMade)

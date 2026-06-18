@@ -77,6 +77,7 @@ import com.chemtable.interactive.feature.minigame.model.DiscoveredMolecule
 import com.chemtable.interactive.feature.minigame.model.ElementBlock
 import com.chemtable.interactive.feature.minigame.model.GameEffect
 import com.chemtable.interactive.feature.minigame.model.GameEvent
+import com.chemtable.interactive.feature.minigame.model.GameMode
 import com.chemtable.interactive.feature.minigame.model.GamePhase
 import com.chemtable.interactive.feature.minigame.model.GameUiState
 import com.chemtable.interactive.feature.minigame.model.MissionTarget
@@ -97,6 +98,17 @@ internal sealed interface FeedbackUi {
 private val BoardTapThreshold = 18.dp
 private val BoardSwipeThreshold = 40.dp
 private val BoardCellPadding = 3.dp
+
+private data class ModeOptionUi(
+    val mode: GameMode,
+    val label: String,
+    val description: String,
+)
+
+private val ModeOptions = listOf(
+    ModeOptionUi(GameMode.MISSION, "미션", "목표 분자를 달성해 보세요"),
+    ModeOptionUi(GameMode.ENDLESS, "엔들리스", "보드가 막힐 때까지 최고점수에 도전해요"),
+)
 
 private data class DifficultyOptionUi(
     val difficulty: Difficulty,
@@ -241,6 +253,11 @@ private fun IntroContent(state: GameUiState, onEvent: (GameEvent) -> Unit) {
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(20.dp))
+        ModeSelector(
+            selected = state.mode,
+            onSelect = { onEvent(GameEvent.SelectMode(it)) },
+        )
+        Spacer(Modifier.height(12.dp))
         DifficultySelector(
             selected = state.difficulty,
             onSelect = { onEvent(GameEvent.SelectDifficulty(it)) },
@@ -304,6 +321,14 @@ private fun HudBar(state: GameUiState, onPause: () -> Unit) {
                         contentDescription = "목표 ${mission.formula} ${mission.progress}/${mission.count}"
                     },
                 )
+            } else if (state.mode == GameMode.ENDLESS) {
+                Text(
+                    text = "엔들리스 · 최고점수 도전",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.semantics {
+                        contentDescription = "엔들리스 모드, 최고점수 도전"
+                    },
+                )
             }
             if (state.combo > 1) {
                 Text("콤보 x${state.combo}", style = MaterialTheme.typography.labelSmall)
@@ -314,6 +339,39 @@ private fun HudBar(state: GameUiState, onPause: () -> Unit) {
             }
         }
         OutlinedButton(onClick = onPause) { Text("일시정지") }
+    }
+}
+
+@Composable
+private fun ModeSelector(
+    selected: GameMode,
+    onSelect: (GameMode) -> Unit,
+) {
+    val selectedOption = ModeOptions.first { it.mode == selected }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("모드", style = MaterialTheme.typography.labelMedium)
+        Spacer(Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ModeOptions.forEach { option ->
+                FilterChip(
+                    selected = option.mode == selected,
+                    onClick = { onSelect(option.mode) },
+                    modifier = Modifier.semantics {
+                        contentDescription = "${option.label} 모드 선택, ${option.description}"
+                    },
+                    label = { Text(option.label) },
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = selectedOption.description,
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -614,7 +672,7 @@ private fun PauseOverlay(onEvent: (GameEvent) -> Unit, onExit: () -> Unit) {
 @Composable
 private fun ResultOverlay(state: GameUiState, onEvent: (GameEvent) -> Unit, onExit: () -> Unit) {
     Scrim {
-        OverlayCard(title = if (state.resultSuccess) "미션 성공!" else "게임 종료") {
+        OverlayCard(title = resultTitleFor(state)) {
             Text("점수 ${state.score}", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             if (state.discoveredMolecules.isNotEmpty()) {
@@ -644,6 +702,12 @@ private fun ResultOverlay(state: GameUiState, onEvent: (GameEvent) -> Unit, onEx
             }
         }
     }
+}
+
+private fun resultTitleFor(state: GameUiState): String = when {
+    state.mode == GameMode.ENDLESS -> "엔들리스 종료"
+    state.resultSuccess -> "미션 성공!"
+    else -> "게임 종료"
 }
 
 @Composable
