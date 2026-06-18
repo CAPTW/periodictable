@@ -44,9 +44,21 @@ interface GameStatsDao {
     @Query("SELECT MAX(score) FROM game_sessions WHERE difficulty = :difficulty")
     fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?>
 
+    @Query("SELECT MAX(score) FROM game_sessions WHERE mode = :mode")
+    fun observeHighScoreByMode(mode: String): Flow<Int?>
+
+    @Query("SELECT MAX(score) FROM game_sessions WHERE difficulty = :difficulty AND mode = :mode")
+    fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String): Flow<Int?>
+
     @Query("SELECT MAX(score) FROM game_sessions")
     suspend fun getHighScore(): Int?
 
     @Query("SELECT MAX(score) FROM game_sessions WHERE difficulty = :difficulty")
     suspend fun getHighScoreByDifficulty(difficulty: String): Int?
+
+    @Query("SELECT MAX(score) FROM game_sessions WHERE mode = :mode")
+    suspend fun getHighScoreByMode(mode: String): Int?
+
+    @Query("SELECT MAX(score) FROM game_sessions WHERE difficulty = :difficulty AND mode = :mode")
+    suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String): Int?
 }

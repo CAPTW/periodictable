@@ -32,6 +32,7 @@ class GameStatsMapperTest {
             score = 1200,
             success = true,
             difficulty = "BEGINNER",
+            mode = "MISSION",
             missionFormula = "CO2",
             missionTargetCount = 2,
             playedAt = 300L,
@@ -44,6 +45,7 @@ class GameStatsMapperTest {
         assertEquals(1200, domain.score)
         assertEquals(true, domain.success)
         assertEquals("BEGINNER", domain.difficulty)
+        assertEquals("MISSION", domain.mode)
         assertEquals("CO2", domain.missionFormula)
         assertEquals(2, domain.missionTargetCount)
         assertEquals(300L, domain.playedAt)
@@ -56,6 +58,7 @@ class GameStatsMapperTest {
             score = 850,
             success = false,
             difficulty = "BEGINNER",
+            mode = "MISSION",
             missionFormula = null,
             missionTargetCount = null,
             playedAt = 400L,
@@ -68,6 +71,7 @@ class GameStatsMapperTest {
         assertEquals(850, entity.score)
         assertEquals(false, entity.success)
         assertEquals("BEGINNER", entity.difficulty)
+        assertEquals("MISSION", entity.mode)
         assertEquals(null, entity.missionFormula)
         assertEquals(null, entity.missionTargetCount)
         assertEquals(400L, entity.playedAt)

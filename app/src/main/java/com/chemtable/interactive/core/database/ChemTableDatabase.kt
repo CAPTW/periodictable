@@ -28,7 +28,7 @@ import com.chemtable.interactive.core.database.converter.DbTypeConverters
         GameMoleculeDiscoveryEntity::class,
         GameSessionEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(DbTypeConverters::class)
