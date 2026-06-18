@@ -100,11 +100,20 @@ class MoleculeGameViewModel @Inject constructor(
             is GameEvent.SelectDifficulty -> selectDifficulty(event.difficulty)
             is GameEvent.SelectMode -> selectMode(event.mode)
             is GameEvent.Swipe -> handleSwipe(event.direction)
+            is GameEvent.TimerTick -> handleTimerTick(event.nowMillis)
             GameEvent.Pause -> _uiState.update {
-                if (it.phase == GamePhase.PLAYING) it.copy(phase = GamePhase.PAUSED) else it
+                if (it.phase == GamePhase.PLAYING) {
+                    it.copy(phase = GamePhase.PAUSED, lastTimerTickAtMillis = null)
+                } else {
+                    it
+                }
             }
             GameEvent.Resume -> _uiState.update {
-                if (it.phase == GamePhase.PAUSED) it.copy(phase = GamePhase.PLAYING) else it
+                if (it.phase == GamePhase.PAUSED) {
+                    it.copy(phase = GamePhase.PLAYING, lastTimerTickAtMillis = null)
+                } else {
+                    it
+                }
             }
             GameEvent.Exit -> viewModelScope.launch { _effects.send(GameEffect.NavigateBack) }
             is GameEvent.OpenCalculator -> viewModelScope.launch {
@@ -195,6 +204,7 @@ class MoleculeGameViewModel @Inject constructor(
             startElementSpec = startSpec,
             size = config.boardSize,
         )
+        val timeLimitMillis = if (mode == GameMode.TIME_ATTACK) config.timeAttackLimitMillis else null
         val firstTime = !hasSeenTutorial
         hasSeenTutorial = true
         _uiState.update {
@@ -207,6 +217,9 @@ class MoleculeGameViewModel @Inject constructor(
                     MissionTarget(formula = spec.formula, count = spec.count, progress = 0)
                 },
                 movesLeft = if (mode == GameMode.MISSION) config.movesLeft else null,
+                timeLeftMillis = timeLimitMillis,
+                timeLimitMillis = timeLimitMillis,
+                lastTimerTickAtMillis = null,
                 discoveredMolecules = emptyList(),
                 resultSuccess = false,
                 showTutorial = firstTime,
@@ -286,6 +299,41 @@ class MoleculeGameViewModel @Inject constructor(
             }
         }
         if (newPhase == GamePhase.RESULT) {
+            recordResultIfNeeded(_uiState.value)
+        }
+    }
+
+    private fun handleTimerTick(nowMillis: Long) {
+        var shouldRecord = false
+        _uiState.update { state ->
+            if (
+                state.phase != GamePhase.PLAYING ||
+                state.mode != GameMode.TIME_ATTACK ||
+                state.showTutorial ||
+                state.timeLeftMillis == null
+            ) {
+                return@update state
+            }
+
+            val lastTick = state.lastTimerTickAtMillis
+            if (lastTick == null) {
+                return@update state.copy(lastTimerTickAtMillis = nowMillis)
+            }
+
+            val elapsedMillis = (nowMillis - lastTick).coerceAtLeast(0L)
+            val timeLeft = (state.timeLeftMillis - elapsedMillis).coerceAtLeast(0L)
+            val isFinished = timeLeft == 0L
+            shouldRecord = isFinished
+
+            state.copy(
+                phase = if (isFinished) GamePhase.RESULT else state.phase,
+                resultSuccess = if (isFinished) false else state.resultSuccess,
+                timeLeftMillis = timeLeft,
+                lastTimerTickAtMillis = nowMillis,
+                selectedMoleculeSheet = if (isFinished) null else state.selectedMoleculeSheet,
+            )
+        }
+        if (shouldRecord) {
             recordResultIfNeeded(_uiState.value)
         }
     }

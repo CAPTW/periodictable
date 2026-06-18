@@ -1,5 +1,6 @@
 package com.chemtable.interactive.feature.minigame
 
+import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -98,6 +99,7 @@ internal sealed interface FeedbackUi {
 private val BoardTapThreshold = 18.dp
 private val BoardSwipeThreshold = 40.dp
 private val BoardCellPadding = 3.dp
+private const val TimeAttackTickIntervalMillis = 250L
 
 private data class ModeOptionUi(
     val mode: GameMode,
@@ -108,6 +110,7 @@ private data class ModeOptionUi(
 private val ModeOptions = listOf(
     ModeOptionUi(GameMode.MISSION, "미션", "목표 분자를 달성해 보세요"),
     ModeOptionUi(GameMode.ENDLESS, "엔들리스", "보드가 막힐 때까지 최고점수에 도전해요"),
+    ModeOptionUi(GameMode.TIME_ATTACK, "타임어택", "제한 시간 안에 최고점수에 도전해요"),
 )
 
 private data class DifficultyOptionUi(
@@ -184,6 +187,15 @@ internal fun MoleculeGameContent(
     BackHandler(enabled = state.selectedMoleculeSheet == null && state.phase == GamePhase.PLAYING) { onEvent(GameEvent.Pause) }
     BackHandler(enabled = state.selectedMoleculeSheet == null && state.phase == GamePhase.PAUSED) { onEvent(GameEvent.Resume) }
     BackHandler(enabled = state.selectedMoleculeSheet == null && state.phase == GamePhase.RESULT) { onExit() }
+
+    LaunchedEffect(state.phase, state.mode, state.showTutorial) {
+        if (state.phase == GamePhase.PLAYING && state.mode == GameMode.TIME_ATTACK && !state.showTutorial) {
+            while (true) {
+                onEvent(GameEvent.TimerTick(SystemClock.elapsedRealtime()))
+                delay(TimeAttackTickIntervalMillis)
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -327,6 +339,16 @@ private fun HudBar(state: GameUiState, onPause: () -> Unit) {
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.semantics {
                         contentDescription = "엔들리스 모드, 최고점수 도전"
+                    },
+                )
+            } else if (state.mode == GameMode.TIME_ATTACK) {
+                val clock = formatTimeAttackClock(state.timeLeftMillis)
+                val accessibilityTime = formatTimeAttackAccessibilityTime(state.timeLeftMillis)
+                Text(
+                    text = "타임어택 · 남은 시간 $clock",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.semantics {
+                        contentDescription = "타임어택 모드, 남은 시간 $accessibilityTime"
                     },
                 )
             }
@@ -706,6 +728,7 @@ private fun ResultOverlay(state: GameUiState, onEvent: (GameEvent) -> Unit, onEx
 
 private fun resultTitleFor(state: GameUiState): String = when {
     state.mode == GameMode.ENDLESS -> "엔들리스 종료"
+    state.mode == GameMode.TIME_ATTACK -> "타임어택 종료"
     state.resultSuccess -> "미션 성공!"
     else -> "게임 종료"
 }

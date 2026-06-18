@@ -7,6 +7,7 @@ data class MissionDifficultyConfig(
     val spawnSymbols: List<String>,
     val missionCandidates: List<MissionTargetSpec>,
     val movesLeft: Int?,
+    val timeAttackLimitMillis: Long,
 )
 
 data class MissionTargetSpec(
@@ -26,6 +27,7 @@ object MissionDifficultyConfigs {
                     MissionTargetSpec("NaCl", 1),
                 ),
                 movesLeft = null,
+                timeAttackLimitMillis = 120_000L,
             )
             Difficulty.INTERMEDIATE -> MissionDifficultyConfig(
                 difficulty = Difficulty.INTERMEDIATE,
@@ -37,6 +39,7 @@ object MissionDifficultyConfigs {
                     MissionTargetSpec("NaCl", 2),
                 ),
                 movesLeft = null,
+                timeAttackLimitMillis = 90_000L,
             )
             Difficulty.ADVANCED -> MissionDifficultyConfig(
                 difficulty = Difficulty.ADVANCED,
@@ -48,6 +51,7 @@ object MissionDifficultyConfigs {
                     MissionTargetSpec("H2O", 3),
                 ),
                 movesLeft = 36,
+                timeAttackLimitMillis = 60_000L,
             )
         }
 }
