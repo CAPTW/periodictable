@@ -7,6 +7,7 @@ import com.chemtable.interactive.domain.model.GameSession
 import com.chemtable.interactive.feature.minigame.MoleculeElementLinkResolver
 import com.chemtable.interactive.feature.minigame.MoleculeGlossaryLinkResolver
 import com.chemtable.interactive.feature.minigame.model.Difficulty
+import com.chemtable.interactive.feature.minigame.model.GameMode
 import com.chemtable.interactive.feature.minigame.model.MoleculeElementLink
 import com.chemtable.interactive.feature.minigame.model.MoleculeGlossaryLink
 import java.util.Locale
@@ -15,6 +16,7 @@ data class MoleculeDexUiState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val highScore: Int? = null,
+    val modeHighScores: List<MoleculeDexModeScore> = emptyList(),
     val difficultyHighScores: List<MoleculeDexDifficultyScore> = emptyList(),
     val discoveries: List<MoleculeDexItem> = emptyList(),
     val recentSessions: List<MoleculeDexSessionItem> = emptyList(),
@@ -38,6 +40,8 @@ data class MoleculeDexSessionItem(
     val success: Boolean,
     val difficulty: String,
     val difficultyLabel: String,
+    val mode: String,
+    val modeLabel: String,
     val missionFormula: String?,
     val missionTargetCount: Int?,
     val playedAt: Long,
@@ -50,9 +54,16 @@ data class MoleculeDexDifficultyScore(
     val highScore: Int?,
 )
 
+data class MoleculeDexModeScore(
+    val mode: String,
+    val label: String,
+    val highScore: Int?,
+)
+
 internal fun buildMoleculeDexUiState(
     discoveries: List<GameMoleculeDiscovery>,
     highScore: Int?,
+    modeHighScores: Map<String, Int?> = emptyMap(),
     difficultyHighScores: Map<String, Int?> = emptyMap(),
     recentSessions: List<GameSession>,
     elements: List<Element>,
@@ -62,6 +73,13 @@ internal fun buildMoleculeDexUiState(
 ): MoleculeDexUiState = MoleculeDexUiState(
     isLoading = false,
     highScore = highScore,
+    modeHighScores = GameMode.entries.map { mode ->
+        MoleculeDexModeScore(
+            mode = mode.name,
+            label = modeLabelFor(mode.name),
+            highScore = modeHighScores[mode.name],
+        )
+    },
     difficultyHighScores = Difficulty.entries.map { difficulty ->
         MoleculeDexDifficultyScore(
             difficulty = difficulty.name,
@@ -86,6 +104,8 @@ internal fun buildMoleculeDexUiState(
             success = session.success,
             difficulty = session.difficulty,
             difficultyLabel = difficultyLabelFor(session.difficulty),
+            mode = session.mode,
+            modeLabel = modeLabelFor(session.mode),
             missionFormula = session.missionFormula,
             missionTargetCount = session.missionTargetCount,
             playedAt = session.playedAt,
@@ -102,6 +122,17 @@ internal fun difficultyLabelFor(difficulty: String): String {
         Difficulty.BEGINNER.name -> "초급"
         Difficulty.INTERMEDIATE.name -> "중급"
         Difficulty.ADVANCED.name -> "고급"
+        else -> normalized
+    }
+}
+
+internal fun modeLabelFor(mode: String): String {
+    val normalized = mode.trim()
+    if (normalized.isBlank()) return "알 수 없음"
+
+    return when (normalized.uppercase(Locale.ROOT)) {
+        GameMode.MISSION.name -> "미션"
+        GameMode.ENDLESS.name -> "엔들리스"
         else -> normalized
     }
 }

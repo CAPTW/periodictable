@@ -14,6 +14,7 @@ import com.chemtable.interactive.domain.usecase.GetRecentGameSessionsUseCase
 import com.chemtable.interactive.feature.minigame.MoleculeElementLinkResolver
 import com.chemtable.interactive.feature.minigame.MoleculeGlossaryLinkResolver
 import com.chemtable.interactive.feature.minigame.model.Difficulty
+import com.chemtable.interactive.feature.minigame.model.GameMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -62,13 +63,25 @@ class MoleculeDexViewModel @Inject constructor(
         )
     }
 
+    private val modeHighScores: Flow<Map<String, Int?>> = combine(
+        getHighScoreUseCase(mode = GameMode.MISSION.name),
+        getHighScoreUseCase(mode = GameMode.ENDLESS.name),
+    ) { mission, endless ->
+        mapOf(
+            GameMode.MISSION.name to mission,
+            GameMode.ENDLESS.name to endless,
+        )
+    }
+
     val uiState: StateFlow<MoleculeDexUiState> = combine(
         baseInput,
         difficultyHighScores,
-    ) { input, highScoresByDifficulty ->
+        modeHighScores,
+    ) { input, highScoresByDifficulty, highScoresByMode ->
         buildMoleculeDexUiState(
             discoveries = input.discoveries,
             highScore = input.highScore,
+            modeHighScores = highScoresByMode,
             difficultyHighScores = highScoresByDifficulty,
             recentSessions = input.recentSessions,
             elements = input.elements,

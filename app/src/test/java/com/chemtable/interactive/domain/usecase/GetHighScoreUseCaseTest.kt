@@ -29,6 +29,30 @@ class GetHighScoreUseCaseTest {
         assertEquals(700, useCase.current("INTERMEDIATE"))
     }
 
+    @Test
+    fun invoke_withModeReturnsModeHighScore() = runBlocking {
+        val useCase = GetHighScoreUseCase(FakeGameStatsRepository())
+
+        assertEquals(1200, useCase(mode = "ENDLESS").first())
+        assertEquals(1200, useCase.current(mode = "ENDLESS"))
+    }
+
+    @Test
+    fun invoke_withDifficultyAndModeReturnsFilteredHighScore() = runBlocking {
+        val useCase = GetHighScoreUseCase(FakeGameStatsRepository())
+
+        assertEquals(1100, useCase(difficulty = "ADVANCED", mode = "ENDLESS").first())
+        assertEquals(1100, useCase.current(difficulty = "ADVANCED", mode = "ENDLESS"))
+    }
+
+    @Test
+    fun invoke_withUnknownModeReturnsNull() = runBlocking {
+        val useCase = GetHighScoreUseCase(FakeGameStatsRepository())
+
+        assertEquals(null, useCase(mode = "TIME_ATTACK").first())
+        assertEquals(null, useCase.current(mode = "TIME_ATTACK"))
+    }
+
     private class FakeGameStatsRepository : GameStatsRepository {
         override fun observeDiscoveredMolecules(): Flow<List<GameMoleculeDiscovery>> = flowOf(emptyList())
 
@@ -39,10 +63,22 @@ class GetHighScoreUseCaseTest {
         override fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?> =
             flowOf(if (difficulty == "INTERMEDIATE") 700 else null)
 
+        override fun observeHighScoreByMode(mode: String): Flow<Int?> =
+            flowOf(if (mode == "ENDLESS") 1200 else null)
+
+        override fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String): Flow<Int?> =
+            flowOf(if (difficulty == "ADVANCED" && mode == "ENDLESS") 1100 else null)
+
         override suspend fun getHighScore(): Int? = 900
 
         override suspend fun getHighScoreByDifficulty(difficulty: String): Int? =
             if (difficulty == "INTERMEDIATE") 700 else null
+
+        override suspend fun getHighScoreByMode(mode: String): Int? =
+            if (mode == "ENDLESS") 1200 else null
+
+        override suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String): Int? =
+            if (difficulty == "ADVANCED" && mode == "ENDLESS") 1100 else null
 
         override suspend fun recordGameResult(record: GameResultRecord) = Unit
     }

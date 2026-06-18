@@ -10,7 +10,11 @@ interface GameStatsRepository {
     fun observeRecentSessions(limit: Int = 10): Flow<List<GameSession>>
     fun observeHighScore(): Flow<Int?>
     fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?>
+    fun observeHighScoreByMode(mode: String): Flow<Int?>
+    fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String): Flow<Int?>
     suspend fun getHighScore(): Int?
     suspend fun getHighScoreByDifficulty(difficulty: String): Int?
+    suspend fun getHighScoreByMode(mode: String): Int?
+    suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String): Int?
     suspend fun recordGameResult(record: GameResultRecord)
 }
