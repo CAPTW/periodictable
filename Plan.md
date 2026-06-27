@@ -75,12 +75,16 @@ Validation commands + likely files. Validation that needs a device/emulator is m
   testReleaseUnitTest assembleRelease` → BUILD SUCCESSFUL. Live tree no longer has dangling
   perf changes. NOTE: this lives on the perf branch, NOT the autopilot lineage (separate effort).
 
-### [ ] M6 — Add/extend Room migration safety test (v4→v5→v6)
+### [x] M6 — Add/extend Room migration safety test (v4→v5→v6)
 - **Acceptance:** a JVM test asserts the schema reaches version 6 via migrations without
   dropping element/glossary/note data and creates the two game tables (builds on
   `GameStatsMigrationSqlTest`).
 - **Validation:** `./gradlew testReleaseUnitTest --tests com.chemtable.interactive.core.database.GameStatsMigrationSqlTest`
 - **Files:** app/src/test/.../core/database/GameStatsMigrationSqlTest.kt, core/database/(DbMigrations, ChemTableDatabase)
+- **Result:** DONE (run 4, 2026-06-27). Refactored `MIGRATION_2_3`/`MIGRATION_3_4` to expose
+  exact-string SQL lists (behavior-identical) + added `DbMigrations.ALL` ordered chain; added
+  `MigrationSafetyTest` (contiguous 2→6 chain, non-destructive/no-DROP-DELETE, 3→4 all-additive,
+  isotopes + both game tables created). Verified `./gradlew testReleaseUnitTest` → BUILD SUCCESSFUL.
 
 ### [ ] M7 — Wire mini-game Result-overlay molecule actions (Phase 2)
 - **Acceptance:** tapping a made molecule offers Calculator (formula prefill), Glossary

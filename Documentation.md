@@ -4,8 +4,8 @@
 **Build/verify pipeline: GREEN baseline established.** The canonical verify gate passes on
 a clean `main` checkout plus the M2 fix. The app's core features are implemented (periodic
 table, search, element detail, calculator, notes, glossary, visualization, molecule mini-game);
-`Settings` is a UI-only stub. M1–M5 are done; remaining work toward "ships" is tracked in
-`Plan.md` (M6–M8): migration-safety test (M6), mini-game result-overlay actions (M7), Settings (M8).
+`Settings` is a UI-only stub. M1–M6 are done; remaining work toward "ships" is tracked in
+`Plan.md` (M7–M8): mini-game result-overlay actions (M7) and Settings (M8).
 
 Not yet COMPLETE — `Prompt.md` Done-When still has open items (M6–M8 feature work;
 on-device flow/accessibility confirmation, which needs an emulator).
@@ -33,6 +33,16 @@ bash scripts/verify.sh                 # Unix
 Running the app interactively requires an Android device/emulator (no headless path).
 
 ## Run log
+
+### Run 4 — 2026-06-27 — M6: Room migration-safety test (v2→v6)
+- Refactored `MIGRATION_2_3`/`MIGRATION_3_4` to iterate exposed exact-string SQL lists (matching
+  the existing `MIGRATION_4_5_SQL`/`MIGRATION_5_6_SQL` pattern; behavior-identical) and added an
+  ordered `DbMigrations.ALL` chain as the single source of truth.
+- Added `MigrationSafetyTest` (JVM, no device): chain is contiguous 2→3→4→5→6; migrations are
+  non-destructive (no DROP TABLE/COLUMN, DELETE FROM, TRUNCATE); v3→v4 is all additive element
+  columns; v2→v3 creates `isotopes`; v4→v5 creates both game tables.
+- Validation: `./gradlew testReleaseUnitTest` → **BUILD SUCCESSFUL** (all unit tests green).
+- Next: **M7** — wire mini-game Result-overlay molecule actions.
 
 ### Run 3 — 2026-06-27 — M5: finish & commit the perf/startup instrumentation
 - Analyzed the uncommitted perf WIP (coherent ~90%): StartupTrace (no-op in release), deferred
