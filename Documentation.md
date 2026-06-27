@@ -4,11 +4,11 @@
 **Build/verify pipeline: GREEN baseline established.** The canonical verify gate passes on
 a clean `main` checkout plus the M2 fix. The app's core features are implemented (periodic
 table, search, element detail, calculator, notes, glossary, visualization, molecule mini-game);
-`Settings` is a UI-only stub. M1–M6 are done; remaining work toward "ships" is tracked in
-`Plan.md` (M7–M8): mini-game result-overlay actions (M7) and Settings (M8).
+`Settings` is a UI-only stub (addressed in M8). M1–M7 are done; the only remaining milestone in
+`Plan.md` is **M8** (the Settings stub).
 
-Not yet COMPLETE — `Prompt.md` Done-When still has open items (M6–M8 feature work;
-on-device flow/accessibility confirmation, which needs an emulator).
+Not yet COMPLETE — `Prompt.md` Done-When still has open items (M8; and on-device
+flow/accessibility confirmation, which needs an emulator).
 
 ## How to build / test / verify (verified 2026-06-27)
 Environment (no network required — all cached):
@@ -33,6 +33,16 @@ bash scripts/verify.sh                 # Unix
 Running the app interactively requires an Android device/emulator (no headless path).
 
 ## Run log
+
+### Run 5 — 2026-06-27 — M7: test-cover the mini-game Result-overlay navigation
+- Found the Result-overlay molecule actions ALREADY implemented end-to-end (`MoleculeResultRow`
+  surfaces a calculator button + element/glossary chips → `GameEvent.Open*` → ViewModel →
+  `GameEffect.Navigate*` → `ChemTableNavHost` callbacks) — the synthesis's "not done" was wrong.
+- The gap was test coverage. Added 5 tests to `MoleculeGameViewModelTest` for the event→effect
+  mapping and its guards: calculator always navigates with the formula; element navigates only
+  when atomicNumber>0; glossary navigates only for a known term id.
+- Validation: `./gradlew testReleaseUnitTest` → **BUILD SUCCESSFUL** (all unit tests green).
+- Next: **M8** — make the Settings stub honest.
 
 ### Run 4 — 2026-06-27 — M6: Room migration-safety test (v2→v6)
 - Refactored `MIGRATION_2_3`/`MIGRATION_3_4` to iterate exposed exact-string SQL lists (matching

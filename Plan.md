@@ -86,13 +86,19 @@ Validation commands + likely files. Validation that needs a device/emulator is m
   `MigrationSafetyTest` (contiguous 2→6 chain, non-destructive/no-DROP-DELETE, 3→4 all-additive,
   isotopes + both game tables created). Verified `./gradlew testReleaseUnitTest` → BUILD SUCCESSFUL.
 
-### [ ] M7 — Wire mini-game Result-overlay molecule actions (Phase 2)
+### [x] M7 — Wire mini-game Result-overlay molecule actions (Phase 2)
 - **Acceptance:** tapping a made molecule offers Calculator (formula prefill), Glossary
   (term lookup), and Element Detail (per-atom) navigation; each navigates without crash
   (formula prefill via existing CalculatorRoute encoding).
 - **Validation:** `./gradlew testReleaseUnitTest` (route encoding covered by CalculatorRouteTest/
   CalculatorPrefillTest; full flow needs device/emulator).
 - **Files:** feature/minigame/{MoleculeGameScreen,MoleculeGameViewModel}.kt, navigation/ChemTableNavHost.kt
+- **Result:** DONE (run 5, 2026-06-27). The actions were ALREADY wired in production
+  (`MoleculeResultRow` → `GameEvent.Open{Calculator,Element,Glossary}` → `GameEffect.Navigate*`
+  → nav callbacks in ChemTableNavHost) but had NO test coverage. Added 5 effect-mapping tests to
+  `MoleculeGameViewModelTest` locking in the mapping + guards (calculator always navigates;
+  element only when atomicNumber>0; glossary only for a known termId). Verified
+  `./gradlew testReleaseUnitTest` → BUILD SUCCESSFUL.
 
 ### [ ] M8 — Implement or explicitly disable the Settings stub
 - **Acceptance:** Settings gains ≥1 working DataStore-backed option (e.g. theme toggle), or

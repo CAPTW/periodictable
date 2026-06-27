@@ -24,6 +24,7 @@ import com.chemtable.interactive.feature.minigame.model.BoardState
 import com.chemtable.interactive.feature.minigame.model.Direction
 import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.ElementBlock
+import com.chemtable.interactive.feature.minigame.model.GameEffect
 import com.chemtable.interactive.feature.minigame.model.GameEvent
 import com.chemtable.interactive.feature.minigame.model.GameMode
 import com.chemtable.interactive.feature.minigame.model.GamePhase
@@ -33,8 +34,10 @@ import com.chemtable.interactive.feature.minigame.model.MoleculeBlock
 import com.chemtable.interactive.feature.minigame.model.SpawnableElement
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -970,6 +973,44 @@ class MoleculeGameViewModelTest {
         assertEquals("H2O", record.missionFormula)
         assertEquals(2, record.missionTargetCount)
         assertEquals(emptyList<String>(), record.moleculesMade)
+    }
+
+    // --- Result-overlay molecule actions: GameEvent.Open* -> navigation GameEffect mapping (M7) ---
+
+    @Test
+    fun openCalculator_emitsNavigateToCalculatorWithFormula() = runBlocking {
+        viewModel.onEvent(GameEvent.OpenCalculator("H2O"))
+        val effect = withTimeoutOrNull(1000) { viewModel.effects.first() }
+        assertEquals(GameEffect.NavigateToCalculator("H2O"), effect)
+    }
+
+    @Test
+    fun openElement_withPositiveAtomicNumber_emitsNavigateToElement() = runBlocking {
+        viewModel.onEvent(GameEvent.OpenElement(8))
+        val effect = withTimeoutOrNull(1000) { viewModel.effects.first() }
+        assertEquals(GameEffect.NavigateToElement(8), effect)
+    }
+
+    @Test
+    fun openElement_withNonPositiveAtomicNumber_emitsNoEffect() = runBlocking {
+        viewModel.onEvent(GameEvent.OpenElement(0))
+        val effect = withTimeoutOrNull(200) { viewModel.effects.first() }
+        assertNull(effect)
+    }
+
+    @Test
+    fun openGlossary_withKnownTerm_emitsNavigateToGlossary() = runBlocking {
+        // "molecule" is one of the seeded glossary terms (see `terms`).
+        viewModel.onEvent(GameEvent.OpenGlossary("molecule"))
+        val effect = withTimeoutOrNull(1000) { viewModel.effects.first() }
+        assertEquals(GameEffect.NavigateToGlossary("molecule"), effect)
+    }
+
+    @Test
+    fun openGlossary_withUnknownTerm_emitsNoEffect() = runBlocking {
+        viewModel.onEvent(GameEvent.OpenGlossary("does_not_exist"))
+        val effect = withTimeoutOrNull(200) { viewModel.effects.first() }
+        assertNull(effect)
     }
 
     private class FakeGameStatsRepository : GameStatsRepository {
