@@ -60,13 +60,21 @@ Functional (from `agent/ACCEPTANCE.md`):
 - [ ] Glossary: search + detail + related-link navigation.
 
 Quality / pipeline:
-- [ ] `scripts/verify.ps1` (or `.sh`) prints **"✅ verify PASS"** on a clean checkout
+- [x] `scripts/verify.ps1` (or `.sh`) prints **"✅ verify PASS"** on a clean checkout
       (lintRelease + testReleaseUnitTest + assembleRelease all green; ~18 unit-test classes pass).
 - [ ] No crash on the basic flow: Table → Detail → Search → Calculator → Glossary.
 - [ ] Accessibility: element cells / buttons carry contentDescription.
-- [ ] Build environment is documented and reproducible (JDK/Gradle/JBR settled).
-- [ ] `AGENTS.md` env section is truthful and a top-level `README.md` documents build/test/verify.
-- [ ] The uncommitted perf/startup work is committed-as-is, finished, or reverted — not dangling.
+- [x] Build environment is documented and reproducible (JDK/Gradle/JBR settled).
+- [x] `AGENTS.md` env section is truthful and a top-level `README.md` documents build/test/verify.
+- [x] The uncommitted perf/startup work is committed-as-is, finished, or reverted — not dangling.
+
+> **Status (after M1–M8, 2026-06-27):** the Quality/pipeline boxes above are ✅ verified
+> headlessly — the full canonical gate (validate_assets + lintRelease + testReleaseUnitTest +
+> assembleRelease) is green on the autopilot lineage. The Functional boxes are implemented and
+> build-green in code (the app was already feature-complete), but their final tick — plus the
+> "no crash on basic flow" and full accessibility (TalkBack) items — require an on-device/emulator
+> smoke run, which is out of scope for this headless session. So the app is **build/ship-ready but
+> not yet marked terminal COMPLETE**; the only residual is on-device confirmation.
 
 When every box above is checked, append a one-time "COMPLETE" section to
 `Documentation.md` and stop making changes (see `Implement.md` §Termination).

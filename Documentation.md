@@ -4,11 +4,13 @@
 **Build/verify pipeline: GREEN baseline established.** The canonical verify gate passes on
 a clean `main` checkout plus the M2 fix. The app's core features are implemented (periodic
 table, search, element detail, calculator, notes, glossary, visualization, molecule mini-game);
-`Settings` is a UI-only stub (addressed in M8). M1–M7 are done; the only remaining milestone in
-`Plan.md` is **M8** (the Settings stub).
+**All 8 Plan milestones (M1–M8) are done**, and the full canonical verify gate (validate_assets +
+lintRelease + testReleaseUnitTest + assembleRelease) is GREEN on the autopilot lineage. The
+`Settings` stub is now honest ("준비 중"). The app is build/ship-ready.
 
-Not yet COMPLETE — `Prompt.md` Done-When still has open items (M8; and on-device
-flow/accessibility confirmation, which needs an emulator).
+Not yet *terminal* COMPLETE — the only residual `Prompt.md` Done-When items are on-device/emulator
+confirmation (the basic-flow smoke and a full accessibility/TalkBack pass), which a headless
+session cannot perform. Code is feature-complete and build-green.
 
 ## How to build / test / verify (verified 2026-06-27)
 Environment (no network required — all cached):
@@ -33,6 +35,16 @@ bash scripts/verify.sh                 # Unix
 Running the app interactively requires an Android device/emulator (no headless path).
 
 ## Run log
+
+### Run 6 — 2026-06-27 — M8: make the Settings stub honest
+- Settings was a UI-only stub whose 5 cards implied working behavior. Took the "coming soon" path
+  (no new DataStore dependency, per M8 acceptance): each row now shows a "준비 중" status label +
+  `contentDescription`, and the intro text states the settings are not yet functional.
+- Verified the FULL canonical gate on the final autopilot lineage: `validate_assets.py` PASS +
+  `./gradlew testReleaseUnitTest assembleRelease lintRelease` → **BUILD SUCCESSFUL** (1m26s).
+- This completes the M4→M8 goal. All 8 Plan milestones are done; the autopilot lineage is
+  build/ship-ready (canonical verify green). Residual to terminal COMPLETE: on-device/emulator
+  smoke (basic flow + full accessibility), out of scope for a headless session.
 
 ### Run 5 — 2026-06-27 — M7: test-cover the mini-game Result-overlay navigation
 - Found the Result-overlay molecule actions ALREADY implemented end-to-end (`MoleculeResultRow`

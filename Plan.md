@@ -100,12 +100,17 @@ Validation commands + likely files. Validation that needs a device/emulator is m
   element only when atomicNumber>0; glossary only for a known termId). Verified
   `./gradlew testReleaseUnitTest` → BUILD SUCCESSFUL.
 
-### [ ] M8 — Implement or explicitly disable the Settings stub
+### [x] M8 — Implement or explicitly disable the Settings stub
 - **Acceptance:** Settings gains ≥1 working DataStore-backed option (e.g. theme toggle), or
   its non-functional items (data sync) are removed / marked "coming soon" so the UI does not
   imply unimplemented behavior.
 - **Validation:** `./gradlew testReleaseUnitTest` (UI confirmation needs device/emulator).
 - **Files:** feature/settings/SettingsScreen.kt
+- **Result:** DONE (run 6, 2026-06-27). Took the "mark coming soon" path (no new DataStore
+  dependency): each Settings row now shows a "준비 중" (coming soon) status label + a
+  `contentDescription`, and the intro text states the settings are not yet functional — the UI
+  no longer implies working behavior. Verified by the full canonical gate (validate_assets +
+  testReleaseUnitTest + assembleRelease + lintRelease) → all green.
 
 ---
 
