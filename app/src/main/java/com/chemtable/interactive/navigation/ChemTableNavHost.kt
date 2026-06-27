@@ -33,7 +33,7 @@ import com.chemtable.interactive.feature.calculator.CalculatorScreen
 import com.chemtable.interactive.feature.minigame.dex.MoleculeDexScreen
 import com.chemtable.interactive.feature.minigame.MoleculeGameScreen
 import com.chemtable.interactive.feature.visualization.VisualizationScreen
-import com.chemtable.interactive.feature.periodictable.PeriodicTableScreen
+import com.chemtable.interactive.feature.periodictable.PeriodicTableRoute
 import com.chemtable.interactive.feature.search.SearchScreen
 import com.chemtable.interactive.feature.settings.SettingsScreen
 
@@ -94,7 +94,7 @@ fun ChemTableNavHost(
     ) { innerPadding ->
         NavHost(navController = navController, startDestination = Screen.PeriodicTable.route) {
             composable(Screen.PeriodicTable.route) {
-                PeriodicTableScreen(
+                PeriodicTableRoute(
                     innerPadding = innerPadding,
                     onElementSelected = { atomicNumber ->
                         navController.navigate(Screen.ElementDetail.createRoute(atomicNumber))

@@ -2,6 +2,7 @@ package com.chemtable.interactive.data.prepopulate
 
 import android.content.Context
 import com.chemtable.interactive.core.database.entity.ElementEntity
+import com.chemtable.interactive.core.util.StartupTrace
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -11,13 +12,21 @@ class ElementDataLoader(
     private val fileName = "elements.json"
 
     fun load(): List<ElementEntity> {
-        val jsonString = context.assets.open(fileName).bufferedReader().readText()
-        val array = JSONArray(jsonString)
-        return (0 until array.length()).mapNotNull { index ->
-            runCatching {
-                val o = array.getJSONObject(index)
-                o.toElementEntity()
-            }.getOrNull()
+        return StartupTrace.measure("ElementDataLoader.load") {
+            val jsonString = StartupTrace.measure("ElementDataLoader.readText") {
+                context.assets.open(fileName).bufferedReader().readText()
+            }
+            val array = StartupTrace.measure("ElementDataLoader.parseJsonArray") {
+                JSONArray(jsonString)
+            }
+            StartupTrace.measure("ElementDataLoader.mapEntities") {
+                (0 until array.length()).mapNotNull { index ->
+                    runCatching {
+                        val o = array.getJSONObject(index)
+                        o.toElementEntity()
+                    }.getOrNull()
+                }
+            }
         }
     }
 

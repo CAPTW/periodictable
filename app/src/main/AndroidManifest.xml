@@ -9,6 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ChemTable">
+        <profileable android:shell="true" />
         
         <activity
             android:name=".MainActivity"

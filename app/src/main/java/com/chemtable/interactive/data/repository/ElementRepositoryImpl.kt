@@ -3,6 +3,7 @@ package com.chemtable.interactive.data.repository
 import com.chemtable.interactive.core.database.dao.ElementDao
 import com.chemtable.interactive.core.model.Element
 import com.chemtable.interactive.core.model.ElementProperty
+import com.chemtable.interactive.core.util.StartupTrace
 import com.chemtable.interactive.data.mapper.toDomain
 import com.chemtable.interactive.domain.repository.ElementRepository
 import kotlinx.coroutines.flow.Flow
@@ -13,7 +14,11 @@ class ElementRepositoryImpl @Inject constructor(
     private val dao: ElementDao
 ) : ElementRepository {
 
-    override fun getElements(): Flow<List<Element>> = dao.getAllElements().map { list -> list.map { it.toDomain() } }
+    override fun getElements(): Flow<List<Element>> = dao.getAllElements().map { list ->
+        StartupTrace.measure("ElementRepository.mapElements count=${list.size}") {
+            list.map { it.toDomain() }
+        }
+    }
 
     override fun getElementByAtomicNumber(number: Int): Flow<Element?> =
         dao.getElementByNumber(number).map { it?.toDomain() }

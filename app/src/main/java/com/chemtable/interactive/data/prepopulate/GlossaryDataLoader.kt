@@ -2,6 +2,7 @@ package com.chemtable.interactive.data.prepopulate
 
 import android.content.Context
 import com.chemtable.interactive.core.database.entity.GlossaryEntity
+import com.chemtable.interactive.core.util.StartupTrace
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -11,12 +12,20 @@ class GlossaryDataLoader(
     private val fileName = "glossary.json"
 
     fun load(): List<GlossaryEntity> {
-        val jsonString = context.assets.open(fileName).bufferedReader().readText()
-        val array = JSONArray(jsonString)
-        return (0 until array.length()).mapNotNull { index ->
-            runCatching {
-                array.getJSONObject(index).toGlossaryEntity()
-            }.getOrNull()
+        return StartupTrace.measure("GlossaryDataLoader.load") {
+            val jsonString = StartupTrace.measure("GlossaryDataLoader.readText") {
+                context.assets.open(fileName).bufferedReader().readText()
+            }
+            val array = StartupTrace.measure("GlossaryDataLoader.parseJsonArray") {
+                JSONArray(jsonString)
+            }
+            StartupTrace.measure("GlossaryDataLoader.mapEntities") {
+                (0 until array.length()).mapNotNull { index ->
+                    runCatching {
+                        array.getJSONObject(index).toGlossaryEntity()
+                    }.getOrNull()
+                }
+            }
         }
     }
 

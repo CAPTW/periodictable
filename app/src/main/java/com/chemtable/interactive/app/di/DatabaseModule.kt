@@ -10,6 +10,7 @@ import com.chemtable.interactive.core.database.dao.GameStatsDao
 import com.chemtable.interactive.core.database.dao.GlossaryDao
 import com.chemtable.interactive.core.database.dao.IsotopeDao
 import com.chemtable.interactive.core.database.dao.NoteDao
+import com.chemtable.interactive.core.util.StartupTrace
 import com.chemtable.interactive.data.prepopulate.DatabaseSeeder
 import dagger.Module
 import dagger.Provides
@@ -26,16 +27,21 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(
         @ApplicationContext context: Context
-    ): ChemTableDatabase = Room.databaseBuilder(
-        context,
-        ChemTableDatabase::class.java,
-        "chemtable.db"
-    ).addMigrations(
-        DbMigrations.MIGRATION_2_3,
-        DbMigrations.MIGRATION_3_4,
-        DbMigrations.MIGRATION_4_5,
-        DbMigrations.MIGRATION_5_6
-    ).build()
+    ): ChemTableDatabase {
+        StartupTrace.configure(context)
+        return StartupTrace.measure("Room.databaseBuilder.chemtable") {
+            Room.databaseBuilder(
+                context,
+                ChemTableDatabase::class.java,
+                "chemtable.db"
+            ).addMigrations(
+                DbMigrations.MIGRATION_2_3,
+                DbMigrations.MIGRATION_3_4,
+                DbMigrations.MIGRATION_4_5,
+                DbMigrations.MIGRATION_5_6
+            ).build()
+        }
+    }
 
     @Provides
     fun provideElementDao(database: ChemTableDatabase): ElementDao = database.elementDao()

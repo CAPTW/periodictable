@@ -2,6 +2,7 @@ package com.chemtable.interactive.data.prepopulate
 
 import android.content.Context
 import com.chemtable.interactive.core.database.entity.IsotopeEntity
+import com.chemtable.interactive.core.util.StartupTrace
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -11,12 +12,20 @@ class IsotopeDataLoader(
     private val fileName = "isotopes.json"
 
     fun load(): List<IsotopeEntity> {
-        val jsonString = context.assets.open(fileName).bufferedReader().readText()
-        val array = JSONArray(jsonString)
-        return (0 until array.length()).mapNotNull { index ->
-            runCatching {
-                array.getJSONObject(index).toIsotopeEntity()
-            }.getOrNull()
+        return StartupTrace.measure("IsotopeDataLoader.load") {
+            val jsonString = StartupTrace.measure("IsotopeDataLoader.readText") {
+                context.assets.open(fileName).bufferedReader().readText()
+            }
+            val array = StartupTrace.measure("IsotopeDataLoader.parseJsonArray") {
+                JSONArray(jsonString)
+            }
+            StartupTrace.measure("IsotopeDataLoader.mapEntities") {
+                (0 until array.length()).mapNotNull { index ->
+                    runCatching {
+                        array.getJSONObject(index).toIsotopeEntity()
+                    }.getOrNull()
+                }
+            }
         }
     }
 
