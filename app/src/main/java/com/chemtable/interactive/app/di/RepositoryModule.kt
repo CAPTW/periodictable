@@ -6,12 +6,14 @@ import com.chemtable.interactive.data.repository.GlossaryRepositoryImpl
 import com.chemtable.interactive.data.repository.IsotopeRepositoryImpl
 import com.chemtable.interactive.data.repository.CalcHistoryRepositoryImpl
 import com.chemtable.interactive.data.repository.NoteRepositoryImpl
+import com.chemtable.interactive.data.repository.SettingsRepositoryImpl
 import com.chemtable.interactive.domain.repository.CalcHistoryRepository
 import com.chemtable.interactive.domain.repository.ElementRepository
 import com.chemtable.interactive.domain.repository.GameStatsRepository
 import com.chemtable.interactive.domain.repository.GlossaryRepository
 import com.chemtable.interactive.domain.repository.IsotopeRepository
 import com.chemtable.interactive.domain.repository.NoteRepository
+import com.chemtable.interactive.domain.repository.SettingsRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -37,4 +39,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindGameStatsRepository(impl: GameStatsRepositoryImpl): GameStatsRepository
+
+    @Binds
+    abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository
 }

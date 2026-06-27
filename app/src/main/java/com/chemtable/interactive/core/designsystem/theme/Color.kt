@@ -30,3 +30,23 @@ object ChemTableColors {
     val heatMid = Color(0xFFFFEB3B)
     val heatHigh = Color(0xFFF44336)
 }
+
+/** Solarized palette (Ethan Schoonover) used by the Solarized theme. */
+object SolarizedColors {
+    val base03 = Color(0xFF002B36)
+    val base02 = Color(0xFF073642)
+    val base01 = Color(0xFF586E75)
+    val base00 = Color(0xFF657B83)
+    val base0 = Color(0xFF839496)
+    val base1 = Color(0xFF93A1A1)
+    val base2 = Color(0xFFEEE8D5)
+    val base3 = Color(0xFFFDF6E3)
+    val yellow = Color(0xFFB58900)
+    val orange = Color(0xFFCB4B16)
+    val red = Color(0xFFDC322F)
+    val magenta = Color(0xFFD33682)
+    val violet = Color(0xFF6C71C4)
+    val blue = Color(0xFF268BD2)
+    val cyan = Color(0xFF2AA198)
+    val green = Color(0xFF859900)
+}

@@ -6,12 +6,16 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ViewModule
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -57,6 +61,7 @@ private sealed class BottomTab(
     object Dict : BottomTab(Screen.Glossary, Icons.AutoMirrored.Filled.MenuBook, "사전")
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChemTableNavHost(
     navController: NavHostController = rememberNavController()
@@ -69,6 +74,20 @@ fun ChemTableNavHost(
     val showBottomBar = currentRoute?.startsWith("game/") != true
 
     Scaffold(
+        topBar = {
+            if (showBottomBar) {
+                TopAppBar(
+                    title = { Text("ChemTable Interactive") },
+                    actions = {
+                        IconButton(onClick = {
+                            navController.navigate(Screen.Settings.route) { launchSingleTop = true }
+                        }) {
+                            Icon(Icons.Filled.Settings, contentDescription = "설정")
+                        }
+                    },
+                )
+            }
+        },
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar {
