@@ -25,9 +25,9 @@
 - UI/UX: Stitch MCP 기반 산출물을 참고하여 Compose로 구현
 
 ## 환경 요구사항 (검증됨: 2026-06-27)
-- **빌드 JDK: 21** — Gradle 데몬 JVM은 `gradle.properties`의 `org.gradle.java.home`로
-  Android Studio 번들 JBR(JDK 21)에 고정됨. 시스템 JDK(예: 25)는 빌드에 사용되지 않음.
-  `verify.ps1`도 `JAVA_HOME`을 해당 JBR 경로(`C:\Program Files\Android\Android Studio\jbr`)로 강제 설정함.
+- **빌드 JDK: 21** — `JAVA_HOME`을 JDK 21(예: Android Studio 번들 JBR `.../Android Studio/jbr`)로
+  설정하거나 Android Studio의 Gradle JDK를 사용. 머신별 절대경로 `org.gradle.java.home` 핀은 제거되어
+  어떤 OS/설치 경로에서도 빌드됨. (`verify.ps1`은 자동으로 `JAVA_HOME`을 로컬 JBR로 설정함.)
 - 툴체인: Gradle **9.0**, AGP **8.13.0**, Kotlin **2.1.10** (KSP 2.1.10-1.0.29).
   `kotlin.jvmToolchain(21)` + `jvmTarget = JVM_17` (source/target 호환성 17).
 - SDK: `compileSdk = 35`, `minSdk = 26`, `targetSdk = 35`. Android SDK 경로는 `local.properties`(`sdk.dir`)에서 읽음.

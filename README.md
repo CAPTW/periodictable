@@ -21,10 +21,18 @@ Room on first launch — the app works fully **without a network**.
   recipes; discovery Dex; 3 difficulties (Beginner/Intermediate/Advanced) × 3 modes
   (Mission/Endless/Time-Attack); persistent high scores.
 
+## Screenshots
+
+| Periodic table | Element detail | Molar-mass calculator |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/periodic-table.png" width="230"> | <img src="docs/screenshots/element-detail.png" width="230"> | <img src="docs/screenshots/calculator.png" width="230"> |
+| **Glossary** | **Dark theme** | **Solarized theme** |
+| <img src="docs/screenshots/glossary.png" width="230"> | <img src="docs/screenshots/theme-dark.png" width="230"> | <img src="docs/screenshots/theme-solarized.png" width="230"> |
+
 ## Requirements
-- **JDK 21** for the build. The Gradle daemon JVM is pinned to the Android Studio bundled
-  JBR (JDK 21) via `gradle.properties` (`org.gradle.java.home`), so the system JDK is not
-  used. Set `JAVA_HOME` to that JBR if you invoke gradle outside the helper scripts.
+- **JDK 21** for the build. Set `JAVA_HOME` to a JDK 21 (e.g. Android Studio's bundled JBR at
+  `.../Android Studio/jbr`), or set the Gradle JDK in Android Studio. The project no longer
+  hard-codes a machine-specific JDK path, so it builds on any OS / install location.
 - **Android SDK** (compileSdk 35). Provide its path in `local.properties` (`sdk.dir`);
   this file is git-ignored and must not be committed.
 - Toolchain: Gradle **9.0**, AGP **8.13.0**, Kotlin **2.1.10**. `minSdk 26` / `targetSdk 35`.
