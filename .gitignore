@@ -9,6 +9,11 @@ app/build/
 
 local.properties
 
+# Release signing (keep private — never commit)
+keystore.properties
+*.jks
+*.keystore
+
 window_dump*.xml
 screen*.png
 phase*_step*.png
