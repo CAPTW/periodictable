@@ -4,11 +4,11 @@
 **Build/verify pipeline: GREEN baseline established.** The canonical verify gate passes on
 a clean `main` checkout plus the M2 fix. The app's core features are implemented (periodic
 table, search, element detail, calculator, notes, glossary, visualization, molecule mini-game);
-`Settings` is a UI-only stub. M1–M4 are done; remaining work toward "ships" is tracked in
-`Plan.md` (M5–M8): resolving the in-flight perf/startup branch (M5) and feature gaps (M6–M8).
+`Settings` is a UI-only stub. M1–M5 are done; remaining work toward "ships" is tracked in
+`Plan.md` (M6–M8): migration-safety test (M6), mini-game result-overlay actions (M7), Settings (M8).
 
-Not yet COMPLETE — `Prompt.md` Done-When still has open items (M5 perf resolution;
-M6–M8 feature work; on-device flow/accessibility confirmation, which needs an emulator).
+Not yet COMPLETE — `Prompt.md` Done-When still has open items (M6–M8 feature work;
+on-device flow/accessibility confirmation, which needs an emulator).
 
 ## How to build / test / verify (verified 2026-06-27)
 Environment (no network required — all cached):
@@ -33,6 +33,20 @@ bash scripts/verify.sh                 # Unix
 Running the app interactively requires an Android device/emulator (no headless path).
 
 ## Run log
+
+### Run 3 — 2026-06-27 — M5: finish & commit the perf/startup instrumentation
+- Analyzed the uncommitted perf WIP (coherent ~90%): StartupTrace (no-op in release), deferred
+  seeding, count-guarded re-seed skip, `<profileable>` release flag, PeriodicTableRoute shell.
+- Applied 3 fixes: removed the artificial `delay(500)`; wrapped AppStartupSeeder's Hilt
+  EntryPoint access + seeding in try/catch (rethrows CancellationException, logs others);
+  documented why PeriodicTableViewModel's `MutableStateFlow` is safe for late/empty subscribers.
+- An incremental build failed with a stale-cache cascade (unresolved refs in unchanged files);
+  a purged clean build confirmed it: `./gradlew clean testReleaseUnitTest assembleRelease`
+  → **BUILD SUCCESSFUL** (1m11s).
+- Committed the finished work on branch `codex/perf-profileable-measurement` (9d23f94). The live
+  tree no longer carries dangling perf changes. This branch is NOT merged into the autopilot
+  lineage — it is a separate perf effort, now in a definite committed state.
+- Next: **M6** — Room migration-safety test (v2→v6) on the autopilot lineage.
 
 ### Run 2 — 2026-06-27 — M4: truthful AGENTS.md env + top-level README
 - Replaced the stale `AGENTS.md` "환경 요구사항" section with the verified toolchain

@@ -54,7 +54,7 @@ Validation commands + likely files. Validation that needs a device/emulator is m
 
 ## Priority 3 — Feature gaps, bugs, and the in-flight perf work
 
-### [ ] M5 — Resolve the uncommitted perf/startup work to a definite state
+### [x] M5 — Resolve the uncommitted perf/startup work to a definite state
 - **Context:** branch `codex/perf-profileable-measurement` carries ~90%-complete startup
   instrumentation (StartupTrace, deferred seeding via AppStartupSeeder, profileable release,
   PeriodicTableRoute loading shell). It must NOT merge to main as-is.
@@ -68,6 +68,12 @@ Validation commands + likely files. Validation that needs a device/emulator is m
 - **Files:** feature/periodictable/{PeriodicTableScreen,PeriodicTableViewModel}.kt,
   navigation/ChemTableNavHost.kt, data/prepopulate/AppStartupSeeder.kt, core/util/StartupTrace.kt,
   MainActivity.kt, ChemTableApp.kt, app/src/main/AndroidManifest.xml
+- **Result:** DONE (run 3, 2026-06-27). Applied the 3 fixes (removed `delay(500)`; defensive
+  try/catch around the Hilt EntryPoint + seeding in AppStartupSeeder; documented the VM
+  MutableStateFlow choice) and committed the finished instrumentation on branch
+  `codex/perf-profileable-measurement` (commit 9d23f94). Verified `./gradlew clean
+  testReleaseUnitTest assembleRelease` → BUILD SUCCESSFUL. Live tree no longer has dangling
+  perf changes. NOTE: this lives on the perf branch, NOT the autopilot lineage (separate effort).
 
 ### [ ] M6 — Add/extend Room migration safety test (v4→v5→v6)
 - **Acceptance:** a JVM test asserts the schema reaches version 6 via migrations without
