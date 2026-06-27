@@ -4,11 +4,11 @@
 **Build/verify pipeline: GREEN baseline established.** The canonical verify gate passes on
 a clean `main` checkout plus the M2 fix. The app's core features are implemented (periodic
 table, search, element detail, calculator, notes, glossary, visualization, molecule mini-game);
-`Settings` is a UI-only stub. Remaining work toward "ships" is tracked in `Plan.md` (M4–M8),
-chiefly: truthful onboarding docs (M4) and resolving the in-flight perf/startup branch (M5).
+`Settings` is a UI-only stub. M1–M4 are done; remaining work toward "ships" is tracked in
+`Plan.md` (M5–M8): resolving the in-flight perf/startup branch (M5) and feature gaps (M6–M8).
 
-Not yet COMPLETE — `Prompt.md` Done-When still has open items (M4 docs; M5 perf resolution;
-on-device flow/accessibility confirmation, which needs an emulator).
+Not yet COMPLETE — `Prompt.md` Done-When still has open items (M5 perf resolution;
+M6–M8 feature work; on-device flow/accessibility confirmation, which needs an emulator).
 
 ## How to build / test / verify (verified 2026-06-27)
 Environment (no network required — all cached):
@@ -33,6 +33,13 @@ bash scripts/verify.sh                 # Unix
 Running the app interactively requires an Android device/emulator (no headless path).
 
 ## Run log
+
+### Run 2 — 2026-06-27 — M4: truthful AGENTS.md env + top-level README
+- Replaced the stale `AGENTS.md` "환경 요구사항" section with the verified toolchain
+  (Gradle 9.0 / AGP 8.13.0 / Kotlin 2.1.10 / `jvmToolchain(21)`+JVM_17; JBR-21 daemon JVM).
+- Added top-level `README.md` (features, requirements, build/test/verify, project layout).
+- Validation: `rg '8.3.2|Kotlin 2.0|Gradle 8.7|JDK 17' AGENTS.md` → no matches. Doc-only; no build/device.
+- Next: **M5** — resolve the perf/startup branch to a definite state.
 
 ### Run 1 — 2026-06-27 — M1+M2+M3: secure the build/verify pipeline + autopilot scaffolding
 **What I did**

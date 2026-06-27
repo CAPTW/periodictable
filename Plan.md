@@ -38,7 +38,7 @@ Validation commands + likely files. Validation that needs a device/emulator is m
 
 ## Priority 2 — Documentation / run-flow accuracy
 
-### [ ] M4 — Fix stale `AGENTS.md` env section + add top-level `README.md`
+### [x] M4 — Fix stale `AGENTS.md` env section + add top-level `README.md`
 - **Acceptance:** `AGENTS.md` "환경 요구사항" states the real toolchain (Gradle 9.0, AGP 8.13.0,
   Kotlin 2.1.10, `jvmToolchain(21)`/JVM_17 target) instead of the stale JDK17/AGP8.3.2/Kotlin2.0/Gradle8.7;
   a root `README.md` documents build (`gradlew assembleDebug`), test (`testReleaseUnitTest`),
@@ -46,6 +46,9 @@ Validation commands + likely files. Validation that needs a device/emulator is m
 - **Validation:** `rg -n '8\.3\.2|Kotlin 2\.0|Gradle 8\.7|JDK 17' AGENTS.md` returns nothing stale;
   manual review (no build/device).
 - **Files:** AGENTS.md, README.md (new)
+- **Result:** DONE (run 2, 2026-06-27). `AGENTS.md` "환경 요구사항" now lists Gradle 9.0 /
+  AGP 8.13.0 / Kotlin 2.1.10 / jvmToolchain(21)+JVM_17 (JBR-21 daemon JVM); top-level
+  `README.md` added. `rg '8.3.2|Kotlin 2.0|Gradle 8.7|JDK 17' AGENTS.md` → no matches.
 
 ---
 
