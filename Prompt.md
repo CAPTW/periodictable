@@ -50,31 +50,32 @@
 
 ## 5. Done When (ship criteria)
 Functional (from `agent/ACCEPTANCE.md`):
-- [ ] App renders the periodic table offline on first launch.
-- [ ] Element detail shows the required properties (N/A when unknown).
-- [ ] Quick search works for name / symbol / atomic number.
-- [ ] Property search: at least one property filter (range) + sort.
-- [ ] Property visualization: list and/or table color-map (≥1).
-- [ ] Notes: per-element CRUD, editable from element detail.
-- [ ] Calculator: molar mass from a typed chemical formula.
-- [ ] Glossary: search + detail + related-link navigation.
+- [x] App renders the periodic table offline on first launch.
+- [x] Element detail shows the required properties (N/A when unknown).
+- [x] Quick search works for name / symbol / atomic number.
+- [x] Property search: at least one property filter (range) + sort.
+- [x] Property visualization: list and/or table color-map (≥1).
+- [x] Notes: per-element CRUD, editable from element detail.
+- [x] Calculator: molar mass from a typed chemical formula.
+- [x] Glossary: search + detail + related-link navigation.
 
 Quality / pipeline:
 - [x] `scripts/verify.ps1` (or `.sh`) prints **"✅ verify PASS"** on a clean checkout
       (lintRelease + testReleaseUnitTest + assembleRelease all green; ~18 unit-test classes pass).
-- [ ] No crash on the basic flow: Table → Detail → Search → Calculator → Glossary.
-- [ ] Accessibility: element cells / buttons carry contentDescription.
+- [x] No crash on the basic flow: Table → Detail → Search → Calculator → Glossary.
+- [x] Accessibility: element cells / buttons carry contentDescription.
 - [x] Build environment is documented and reproducible (JDK/Gradle/JBR settled).
 - [x] `AGENTS.md` env section is truthful and a top-level `README.md` documents build/test/verify.
 - [x] The uncommitted perf/startup work is committed-as-is, finished, or reverted — not dangling.
 
-> **Status (after M1–M8, 2026-06-27):** the Quality/pipeline boxes above are ✅ verified
-> headlessly — the full canonical gate (validate_assets + lintRelease + testReleaseUnitTest +
-> assembleRelease) is green on the autopilot lineage. The Functional boxes are implemented and
-> build-green in code (the app was already feature-complete), but their final tick — plus the
-> "no crash on basic flow" and full accessibility (TalkBack) items — require an on-device/emulator
-> smoke run, which is out of scope for this headless session. So the app is **build/ship-ready but
-> not yet marked terminal COMPLETE**; the only residual is on-device confirmation.
+> **Status (after M1–M8 + on-device verification, 2026-06-27): ALL Done-When boxes verified.**
+> The full canonical gate (validate_assets + lintRelease + testReleaseUnitTest + assembleRelease)
+> is green on the autopilot lineage, AND the app was run on an Android emulator
+> (Medium_Phone_API_36.1, API 36): the basic flow Table → Detail → Search → Calculator → Glossary
+> (+ Visualization, Notes) all render correctly with **no crash/ANR**; the calculator computed
+> H₂O = 18.015 g/mol; element cells carry `contentDescription`. The app is **COMPLETE / ship-ready**
+> — see the COMPLETE section in `Documentation.md`. Minor follow-up (NOT a Done-When blocker): the
+> `Settings` screen is registered but has no UI entry point, so it is currently unreachable.
 
 When every box above is checked, append a one-time "COMPLETE" section to
 `Documentation.md` and stop making changes (see `Implement.md` §Termination).
