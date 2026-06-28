@@ -68,16 +68,15 @@ app/src/main/java/com/chemtable/interactive/
   feature/        # calculator, elementdetail, glossary, minigame, notes,
                   # periodictable, search, settings, visualization
 app/src/main/assets/   # elements.json, glossary.json, isotopes.json (bundled data)
-scripts/               # verify, prereqs, env, automation (ralph-loop, swarm)
-agent/                 # PRD / ACCEPTANCE / BACKLOG (product spec, single source of truth)
-docs/                  # mini-game phase specs & plans
+scripts/               # verify, prereqs, env, and local automation helpers
+docs/product/          # PRD / ACCEPTANCE / BACKLOG product planning docs
+docs/                  # screenshots, mini-game phase specs, plans, and guides
 ```
 
 ## Documentation
-- Product spec / acceptance: `agent/PRD.md`, `agent/ACCEPTANCE.md`.
-- Developer/agent guide: `AGENTS.md`.
-- Autopilot state (on branch `codex/autopilot` / `refs/codex/autopilot`): `Prompt.md`,
-  `Plan.md`, `Implement.md`, `Documentation.md`.
+- Product spec / acceptance: `docs/product/PRD.md`, `docs/product/ACCEPTANCE.md`,
+  `docs/product/BACKLOG.md`.
+- Developer guide: `docs/developer-guide.md`.
 
 ## Offline-first & data policy
 No network is used on any core path. Unknown/missing data is rendered consistently as
