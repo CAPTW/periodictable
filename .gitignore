@@ -9,7 +9,7 @@ app/build/
 
 local.properties
 
-# Release signing (keep private — never commit)
+# Release signing keys stay local.
 keystore.properties
 *.jks
 *.keystore
