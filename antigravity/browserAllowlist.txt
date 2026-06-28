@@ -1,7 +1,0 @@
-# Sample browser allowlist for Antigravity
-developer.android.com
-maven.google.com
-repo1.maven.org
-developers.openai.com
-github.com
-stitch.withgoogle.com

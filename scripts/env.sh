@@ -9,4 +9,4 @@ export PROJECT_ROOT
 export GRADLE_USER_HOME="${GRADLE_USER_HOME:-${PROJECT_ROOT}/.gradle-user-home}"
 export ANDROID_USER_HOME="${ANDROID_USER_HOME:-${PROJECT_ROOT}/.android-home}"
 
-mkdir -p "$GRADLE_USER_HOME" "$ANDROID_USER_HOME" "agent/logs" || true
+mkdir -p "$GRADLE_USER_HOME" "$ANDROID_USER_HOME" || true
