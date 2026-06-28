@@ -1,4 +1,4 @@
-# PeriodicTable project environment settings.
+# Configure PeriodicTable project-local tool caches.
 $ErrorActionPreference = "Stop"
 
 $script:SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path

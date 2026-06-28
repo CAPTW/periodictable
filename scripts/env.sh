@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 export PROJECT_ROOT
 
-# Workspace-local caches (sandbox friendly)
+# Project-local caches for Gradle and Android tooling.
 export GRADLE_USER_HOME="${GRADLE_USER_HOME:-${PROJECT_ROOT}/.gradle-user-home}"
 export ANDROID_USER_HOME="${ANDROID_USER_HOME:-${PROJECT_ROOT}/.android-home}"
 

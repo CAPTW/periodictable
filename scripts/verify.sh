@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
+# Run asset validation and Android release build checks.
 source "$(dirname "$0")/env.sh"
 
 if [[ -x "${GRADLE_CMD:-}" ]]; then

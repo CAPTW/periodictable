@@ -1,9 +1,9 @@
-# verify.ps1 — Gradle 빌드 검증 (PowerShell)
+# Run asset validation and Android release build checks.
 $ErrorActionPreference = "Stop"
 
 . (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "env.ps1")
 
-# Gradle 실행 파일 결정
+# Resolve the Gradle executable.
 if ($env:GRADLE_CMD -and (Test-Path $env:GRADLE_CMD)) {
     $GradleExe = $env:GRADLE_CMD
 }
@@ -14,16 +14,16 @@ elseif (Get-Command gradle -ErrorAction SilentlyContinue) {
     $GradleExe = (Get-Command gradle).Source
 }
 else {
-    Write-Error "Neither gradlew.bat nor gradle was found. Install JDK 17 and Gradle or use the wrapper."
+    Write-Error "Neither gradlew.bat nor gradle was found. Install JDK 21 and Gradle or use the wrapper."
     exit 2
 }
 
 $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 $env:Path = "$env:JAVA_HOME\bin;" + $env:Path
 
-Write-Host "▶ Using JAVA_HOME: $env:JAVA_HOME" -ForegroundColor Cyan
-Write-Host "▶ Using Gradle: $GradleExe" -ForegroundColor Cyan
-Write-Host "▶ PROJECT_ROOT: $env:PROJECT_ROOT" -ForegroundColor Cyan
+Write-Host "[verify] Using JAVA_HOME: $env:JAVA_HOME" -ForegroundColor Cyan
+Write-Host "[verify] Using Gradle: $GradleExe" -ForegroundColor Cyan
+Write-Host "[verify] PROJECT_ROOT: $env:PROJECT_ROOT" -ForegroundColor Cyan
 
 function Remove-GeneratedDirs {
     $targets = @(
@@ -76,10 +76,10 @@ try {
     & $GradleExe --no-daemon lintRelease testReleaseUnitTest assembleRelease
     if ($LASTEXITCODE -ne 0) { throw "lintRelease/testReleaseUnitTest/assembleRelease failed (exit $LASTEXITCODE)" }
 
-    Write-Host "`n✅ verify PASS" -ForegroundColor Green
+    Write-Host "`n[verify] PASS" -ForegroundColor Green
 }
 catch {
-    Write-Host "`n❌ verify FAIL: $_" -ForegroundColor Red
+    Write-Host "`n[verify] FAIL: $_" -ForegroundColor Red
     exit 1
 }
 finally {

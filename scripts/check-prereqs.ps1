@@ -1,4 +1,4 @@
-# Check local prerequisites for building and verifying the Android app.
+# Validate local prerequisites for the Android build.
 $ErrorActionPreference = "Stop"
 
 . (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "env.ps1")

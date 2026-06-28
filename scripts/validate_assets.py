@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Validate bundled PeriodicTable JSON assets."""
+
 import json
 import pathlib
 import sys

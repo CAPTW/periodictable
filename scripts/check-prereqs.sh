@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Validate local prerequisites for the Android build.
 source "$(dirname "$0")/env.sh"
 
 fail() { echo "ERROR: $1" >&2; exit 2; }
