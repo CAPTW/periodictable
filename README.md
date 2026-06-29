@@ -3,8 +3,8 @@
 An **offline-first, on-device Android periodic-table learning app** (package
 `com.chemtable.interactive`). Kotlin + Jetpack Compose + Material 3 + Hilt + Room,
 organized in Clean Architecture layers (`core` / `data` / `domain` / `feature`).
-All element, isotope, glossary, and recipe data is bundled in the APK and seeded into
-Room on first launch; the app works fully **without a network**.
+All element, isotope, glossary, and recipe data is bundled in the APK, seeded into
+Room on first launch, and available fully **without a network**.
 
 ## Features
 - **Periodic table**: interactive grid with zoom/pan; tap an element for detail.
