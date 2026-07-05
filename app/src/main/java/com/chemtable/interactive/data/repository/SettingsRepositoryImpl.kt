@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.chemtable.interactive.core.model.AppSettings
+import com.chemtable.interactive.core.model.TableViewMode
 import com.chemtable.interactive.core.model.ThemeMode
 import com.chemtable.interactive.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +23,7 @@ class SettingsRepositoryImpl @Inject constructor(
         AppSettings(
             themeMode = parseThemeMode(prefs[KEY_THEME]),
             fontScale = clampFontScale(prefs[KEY_FONT_SCALE] ?: AppSettings.DEFAULT.fontScale),
+            tableViewMode = parseTableViewMode(prefs[KEY_TABLE_VIEW_MODE]),
         )
     }
 
@@ -33,13 +35,22 @@ class SettingsRepositoryImpl @Inject constructor(
         dataStore.edit { it[KEY_FONT_SCALE] = clampFontScale(scale) }
     }
 
+    override suspend fun setTableViewMode(mode: TableViewMode) {
+        dataStore.edit { it[KEY_TABLE_VIEW_MODE] = mode.name }
+    }
+
     companion object {
         private val KEY_THEME = stringPreferencesKey("theme_mode")
         private val KEY_FONT_SCALE = floatPreferencesKey("font_scale")
+        private val KEY_TABLE_VIEW_MODE = stringPreferencesKey("table_view_mode")
 
         /** Maps a stored string back to a [ThemeMode], falling back to the default for unknown/null. */
         fun parseThemeMode(raw: String?): ThemeMode =
             ThemeMode.entries.firstOrNull { it.name == raw } ?: AppSettings.DEFAULT.themeMode
+
+        /** Maps a stored string back to a [TableViewMode], falling back to the default for unknown/null. */
+        fun parseTableViewMode(raw: String?): TableViewMode =
+            TableViewMode.entries.firstOrNull { it.name == raw } ?: AppSettings.DEFAULT.tableViewMode
 
         fun clampFontScale(value: Float): Float =
             value.coerceIn(AppSettings.MIN_FONT_SCALE, AppSettings.MAX_FONT_SCALE)
