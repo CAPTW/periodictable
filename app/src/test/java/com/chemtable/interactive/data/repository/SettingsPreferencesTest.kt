@@ -1,6 +1,7 @@
 package com.chemtable.interactive.data.repository
 
 import com.chemtable.interactive.core.model.AppSettings
+import com.chemtable.interactive.core.model.TableViewMode
 import com.chemtable.interactive.core.model.ThemeMode
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -27,5 +28,19 @@ class SettingsPreferencesTest {
         assertEquals(AppSettings.MIN_FONT_SCALE, SettingsRepositoryImpl.clampFontScale(0.1f))
         assertEquals(AppSettings.MAX_FONT_SCALE, SettingsRepositoryImpl.clampFontScale(9f))
         assertEquals(1.0f, SettingsRepositoryImpl.clampFontScale(1.0f))
+    }
+
+    @Test
+    fun parseTableViewMode_knownValues_roundTrip() {
+        TableViewMode.entries.forEach { mode ->
+            assertEquals(mode, SettingsRepositoryImpl.parseTableViewMode(mode.name))
+        }
+    }
+
+    @Test
+    fun parseTableViewMode_unknownOrNull_fallsBackToDefault() {
+        assertEquals(AppSettings.DEFAULT.tableViewMode, SettingsRepositoryImpl.parseTableViewMode(null))
+        assertEquals(AppSettings.DEFAULT.tableViewMode, SettingsRepositoryImpl.parseTableViewMode("NOPE"))
+        assertEquals(AppSettings.DEFAULT.tableViewMode, SettingsRepositoryImpl.parseTableViewMode(""))
     }
 }

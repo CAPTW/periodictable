@@ -1,58 +1,66 @@
 package com.chemtable.interactive.feature.periodictable
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import com.chemtable.interactive.core.designsystem.component.ElementCell
+import com.chemtable.interactive.core.designsystem.theme.ChemTableSpacing
 import com.chemtable.interactive.core.model.Element
 
-private data class GridSlot(val element: Element?)
+/** Number of columns (groups) and rows (periods, incl. the detached f-block rows) in the layout. */
+internal const val PERIODIC_TABLE_GROUPS = 18
+internal const val PERIODIC_TABLE_PERIODS = 10
 
+/**
+ * Renders the periodic table as a fixed-size grid: every cell is exactly [cellSize] square.
+ *
+ * The grid is intentionally non-lazy (only ~180 slots) so its measured size is deterministic —
+ * that lets callers either scale it to fit the screen or place it in a pan/zoom canvas, and avoids
+ * the virtualization glitches a `LazyVerticalGrid` shows when wrapped in a `graphicsLayer` transform.
+ */
 @Composable
 fun PeriodicTableGrid(
     elements: List<Element>,
     selectedAtomicNumber: Int?,
+    cellSize: Dp,
     onElementClick: (Int) -> Unit,
     onElementLongClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val slots = remember(elements) {
-        buildList {
-            for (period in 1..10) {
-                for (group in 1..18) {
-                    add(GridSlot(elements.firstOrNull { it.period == period && it.group == group }))
-                }
+    val rows = remember(elements) {
+        (1..PERIODIC_TABLE_PERIODS).map { period ->
+            (1..PERIODIC_TABLE_GROUPS).map { group ->
+                elements.firstOrNull { it.period == period && it.group == group }
             }
         }
     }
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(18),
-        horizontalArrangement = Arrangement.spacedBy(1.dp),
-        verticalArrangement = Arrangement.spacedBy(1.dp),
-        contentPadding = PaddingValues(8.dp),
-        modifier = modifier.fillMaxSize()
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(ChemTableSpacing.elementCellGap)
     ) {
-        items(slots) { slot ->
-            if (slot.element == null) {
-                Box(Modifier.sizeIn(minWidth = 30.dp, minHeight = 30.dp))
-            } else {
-                ElementCell(
-                    element = slot.element,
-                    isCompact = true,
-                    isSelected = selectedAtomicNumber == slot.element.atomicNumber,
-                    onClick = { onElementClick(slot.element.atomicNumber) },
-                    onLongClick = { onElementLongClick(slot.element.atomicNumber) }
-                )
+        for (row in rows) {
+            Row(horizontalArrangement = Arrangement.spacedBy(ChemTableSpacing.elementCellGap)) {
+                for (element in row) {
+                    if (element == null) {
+                        Spacer(Modifier.size(cellSize))
+                    } else {
+                        ElementCell(
+                            element = element,
+                            isCompact = true,
+                            isSelected = selectedAtomicNumber == element.atomicNumber,
+                            onClick = { onElementClick(element.atomicNumber) },
+                            onLongClick = { onElementLongClick(element.atomicNumber) },
+                            modifier = Modifier.size(cellSize)
+                        )
+                    }
+                }
             }
         }
     }
