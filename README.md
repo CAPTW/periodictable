@@ -81,3 +81,8 @@ docs/                  # screenshots, phase notes, and runtime checklists
 ## Offline-First & Data Policy
 No network is used on any core path. Unknown or missing data is rendered
 consistently as **N/A**. All learning content ships inside the APK.
+
+## License
+MIT License.
+
+The license applies to this repository's app source, documentation, and repository-authored bundled learning data unless a file says otherwise. Third-party Android/Gradle dependencies remain under their own licenses.
