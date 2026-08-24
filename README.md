@@ -1,88 +1,99 @@
-# ChemTable Interactive
+<!-- BRAND_REFRESH_2026_08_25 -->
+<div align="center">
 
-An **offline-first, on-device Android periodic-table learning app** (package
-`com.chemtable.interactive`). Kotlin + Jetpack Compose + Material 3 + Hilt + Room,
-organized in Clean Architecture layers (`core` / `data` / `domain` / `feature`).
-All element, isotope, glossary, and recipe data is bundled in the APK, seeded into
-Room on first launch, and available fully **without a network**.
+# ⚛️ ChemTable Interactive
 
-## Features
-- **Periodic table**: interactive grid with zoom/pan; tap an element for detail.
-- **Search**: by name, symbol, atomic number, property ranges, isotope stability,
-  isotope decay filters, and sorting.
-- **Element detail**: overview, atomic/electron, thermal, crystal/3D, NFPA,
-  abundance, and isotope tabs, with per-element notes and glossary cross-links.
-  Unknown values show **N/A**.
-- **Molar-mass calculator**: formula parsing for parentheses, charges, hydrates,
-  and history.
-- **Notes**: per-element CRUD, editable from element detail.
-- **Glossary**: search, detail pages, and cross-references to/from elements and
-  properties.
-- **Visualization**: property heatmaps, bars, comparison, and a lab hub.
-- **Molecule Making mini-game**: build molecules from elemental blocks via
-  whitelist recipes; discovery Dex; Beginner, Intermediate, and Advanced
-  difficulties; Mission, Endless, and Time-Attack modes; persistent high scores.
+### The periodic table, fully on-device.
+
+**A polished Android chemistry workspace for exploring elements, isotopes, properties, formulas, notes, visualizations, and molecule-building challenges without a network connection.**
+
+![Android](https://img.shields.io/badge/Android-minSdk%2026-3DDC84?style=for-the-badge&logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
+![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
+![Offline](https://img.shields.io/badge/data-offline--first-F97316?style=for-the-badge)
+
+[Explore the features](#what-is-inside) · [Build it](#build-and-verify) · [Screenshots](#screenshots) · [Full technical reference](README.technical.2026-08-25.md)
+
+</div>
+
+---
+
+> **No login. No cloud dependency. No “content unavailable” screen when the network disappears.**
+
+ChemTable Interactive bundles its element, isotope, glossary, and recipe datasets in the APK, seeds them into Room on first launch, and keeps every core learning path on-device.
+
+## What is inside
+
+| Mode | Experience |
+|---|---|
+| **Explore** | Zoomable periodic table, element details, isotope data, abundance, thermal, crystal, electron, and safety properties. |
+| **Find** | Search by name, symbol, atomic number, ranges, stability, decay filters, and sorting. |
+| **Calculate** | Parse molecular formulas with parentheses, hydrates, and charges; retain local history. |
+| **Learn by doing** | Compare properties, inspect heatmaps, keep notes, browse glossary links, and discover molecules in the mini-game. |
+
+## Product flow
+
+```mermaid
+flowchart LR
+    A["Bundled JSON data"] --> B["Room seed"]
+    B --> C["Periodic table"]
+    B --> D["Search + filters"]
+    B --> E["Element + isotope detail"]
+    B --> F["Calculator + notes"]
+    B --> G["Visualizations + mini-game"]
+```
 
 ## Screenshots
 
-| Periodic table | Element detail | Molar-mass calculator |
+| Periodic table | Element detail | Calculator |
 | :---: | :---: | :---: |
-| <img src="docs/screenshots/periodic-table.png" width="230"> | <img src="docs/screenshots/element-detail.png" width="230"> | <img src="docs/screenshots/calculator.png" width="230"> |
-| **Glossary** | **Dark theme** | **Solarized theme** |
-| <img src="docs/screenshots/glossary.png" width="230"> | <img src="docs/screenshots/theme-dark.png" width="230"> | <img src="docs/screenshots/theme-solarized.png" width="230"> |
+| <img src="docs/screenshots/periodic-table.png" width="230" alt="Periodic table screen"> | <img src="docs/screenshots/element-detail.png" width="230" alt="Element detail screen"> | <img src="docs/screenshots/calculator.png" width="230" alt="Molar mass calculator"> |
 
-## Requirements
-- **JDK 21** for the build. Set `JAVA_HOME` to a JDK 21, or set the Gradle JDK
-  in Android Studio. The project does not hard-code a machine-specific JDK path.
-- **Android SDK** with compileSdk 35. Provide its path in `local.properties`
-  (`sdk.dir`); this file is git-ignored and must not be committed.
-- Toolchain: Gradle **9.0**, AGP **8.13.0**, Kotlin **2.1.10**. `minSdk 26` /
-  `targetSdk 35`.
+| Glossary | Dark theme | Solarized theme |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/glossary.png" width="230" alt="Glossary screen"> | <img src="docs/screenshots/theme-dark.png" width="230" alt="Dark theme"> | <img src="docs/screenshots/theme-solarized.png" width="230" alt="Solarized theme"> |
 
-## Build / Test / Verify
+## Build and verify
+
+Requirements:
+
+- JDK 21
+- Android SDK with compileSdk 35
+- Gradle 9.0 / AGP 8.13.0
+- Kotlin 2.1.10
+
 ```bash
-# Debug APK (install on a device/emulator):
-./gradlew assembleDebug            # Windows: .\gradlew.bat assembleDebug
-
-# JVM unit tests (no device required):
+./gradlew assembleDebug
 ./gradlew testReleaseUnitTest
-
-# Release APK (unsigned; minification disabled):
 ./gradlew assembleRelease
-
-# Full verification gate:
-.\scripts\verify.ps1               # Windows (PowerShell)
-bash scripts/verify.sh             # Unix
 ```
 
-Running the app interactively requires an Android device or emulator. There are
-currently no instrumented (`androidTest`) tests; correctness is covered by JVM
-unit tests under `app/src/test`.
+Full repository gate:
 
-## Project Layout
-```
-app/src/main/java/com/chemtable/interactive/
-  app/            # Application + Hilt DI modules + nav host wiring
-  core/           # design system, model, database, utilities
-  data/           # repository implementations, mappers, asset-to-Room seeding
-  domain/         # repository interfaces and use cases
-  feature/        # calculator, element detail, glossary, mini-game, notes,
-                  # periodic table, search, settings, visualization
-app/src/main/assets/   # elements.json, glossary.json, isotopes.json
-scripts/               # verification, prerequisite, and environment helpers
-docs/                  # screenshots, phase notes, and runtime checklists
+```powershell
+.\scripts\verify.ps1
 ```
 
-## Documentation
-- Screenshots: `docs/screenshots/`.
-- Mini-game planning notes and runtime checklists: `docs/`.
-- Build verification: `scripts/verify.ps1` and `scripts/verify.sh`.
+or:
 
-## Offline-First & Data Policy
-No network is used on any core path. Unknown or missing data is rendered
-consistently as **N/A**. All learning content ships inside the APK.
+```bash
+bash scripts/verify.sh
+```
+
+## Offline-first contract
+
+- Core screens do not require a network.
+- Unknown or unavailable values render as **N/A** rather than fabricated content.
+- User notes and calculator history remain local.
+- Bundled educational data is versioned with the app.
+- Interactive runtime verification still requires a device or emulator; the repository currently relies on JVM unit tests rather than `androidTest`.
+
+## Full technical reference
+
+The original detailed README — including the complete feature list, project layout, requirements, data policy, and license notes — is preserved unchanged at:
+
+**[README.technical.2026-08-25.md](README.technical.2026-08-25.md)**
 
 ## License
-MIT License.
 
-The license applies to this repository's app source, documentation, and repository-authored bundled learning data unless a file says otherwise. Third-party Android/Gradle dependencies remain under their own licenses.
+MIT. Third-party Android and Gradle dependencies remain under their respective licenses.
