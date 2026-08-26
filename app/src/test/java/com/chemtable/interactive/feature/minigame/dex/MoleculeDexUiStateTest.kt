@@ -1,6 +1,7 @@
 package com.chemtable.interactive.feature.minigame.dex
 
 import com.chemtable.interactive.core.model.Element
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.core.model.ElementCategory
 import com.chemtable.interactive.core.model.GlossaryCategory
 import com.chemtable.interactive.core.model.GlossaryTerm
@@ -90,6 +91,7 @@ class MoleculeDexUiStateTest {
                     missionTargetCount = 2,
                     playedAt = 400L,
                     moleculesMade = listOf("CO2", "H2O"),
+                    boardSize = 6,
                 ),
             ),
             elements = listOf(
@@ -104,12 +106,14 @@ class MoleculeDexUiStateTest {
             ),
             elementLinkResolver = elementLinkResolver,
             glossaryLinkResolver = glossaryLinkResolver,
+            selectedBoardSize = ClassicBoardSize.FIVE_BY_FIVE,
         )
 
         assertFalse(state.isLoading)
         assertFalse(state.isEmpty)
         assertEquals(2, state.discoveredCount)
         assertEquals(900, state.highScore)
+        assertEquals(ClassicBoardSize.FIVE_BY_FIVE, state.selectedBoardSize)
         assertEquals(listOf("CO2", "H2O"), state.discoveries.map { it.formula })
 
         val carbonDioxide = state.discoveries.first()
@@ -126,6 +130,8 @@ class MoleculeDexUiStateTest {
         assertEquals("TIME_ATTACK", session.mode)
         assertEquals("타임어택", session.modeLabel)
         assertEquals(listOf("CO2", "H2O"), session.moleculesMade)
+        assertEquals(6, session.boardSize)
+        assertEquals("6×6", session.boardSizeLabel)
 
         assertEquals(
             listOf(

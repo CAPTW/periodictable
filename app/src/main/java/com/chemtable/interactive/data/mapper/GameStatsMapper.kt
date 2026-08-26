@@ -23,6 +23,7 @@ fun GameSessionEntity.toDomain(): GameSession = GameSession(
     missionTargetCount = missionTargetCount,
     playedAt = playedAt,
     moleculesMade = moleculesMade,
+    boardSize = boardSize,
 )
 
 fun GameResultRecord.toEntity(): GameSessionEntity = GameSessionEntity(
@@ -34,4 +35,5 @@ fun GameResultRecord.toEntity(): GameSessionEntity = GameSessionEntity(
     missionTargetCount = missionTargetCount,
     playedAt = playedAt,
     moleculesMade = moleculesMade,
+    boardSize = boardSize,
 )

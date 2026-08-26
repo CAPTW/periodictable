@@ -1,5 +1,6 @@
 package com.chemtable.interactive.feature.minigame.engine
 
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.feature.minigame.model.BoardState
 import com.chemtable.interactive.feature.minigame.model.Direction
 import com.chemtable.interactive.feature.minigame.model.ElementBlock
@@ -91,7 +92,7 @@ class BoardEngine(
             }
         }
 
-        val result = BoardState(size, newGrid.map { it.toList() })
+        val result = BoardState(board.boardSize, newGrid.map { it.toList() })
         val moved = result.grid != board.grid
         return SlideOutcome(result, moved, merged)
     }
@@ -142,7 +143,7 @@ class BoardEngine(
                 newGrid[row][c] = block
             }
         }
-        return BoardState(size, newGrid.map { it.toList() })
+        return BoardState(board.boardSize, newGrid.map { it.toList() })
     }
 
     /** 빈 칸 하나에 스폰 풀에서 무작위 원소를 1개 생성. 빈 칸/풀이 없으면 그대로 반환. */
@@ -161,7 +162,7 @@ class BoardEngine(
         )
         val newGrid = board.grid.map { it.toMutableList() }
         newGrid[pos.row][pos.col] = block
-        return BoardState(board.size, newGrid.map { it.toList() }) to pos
+        return BoardState(board.boardSize, newGrid.map { it.toList() }) to pos
     }
 
     /** 보드가 가득 차고 어떤 방향으로도 압착/조합이 불가능하면 game over. */
@@ -171,8 +172,13 @@ class BoardEngine(
     }
 
     /** 빈 보드에서 count 개 원소를 스폰하고 중력 정렬한 초기 보드 생성. startElementSpec 이 제공되면 1개 보장. */
-    fun seedBoard(count: Int, startElementSpec: SpawnableElement? = null, size: Int = 4): BoardState {
-        var board = BoardState.empty(size)
+    fun seedBoard(
+        count: Int,
+        startElementSpec: SpawnableElement? = null,
+        boardSize: ClassicBoardSize = ClassicBoardSize.DEFAULT,
+    ): BoardState {
+        val size = boardSize.dimension
+        var board = BoardState.empty(boardSize)
         val numRandom = if (startElementSpec != null) count - 1 else count
 
         if (startElementSpec != null) {
@@ -189,7 +195,7 @@ class BoardEngine(
                 )
                 val newGrid = board.grid.map { it.toMutableList() }
                 newGrid[pos.row][pos.col] = block
-                board = BoardState(size, newGrid.map { it.toList() })
+                board = BoardState(boardSize, newGrid.map { it.toList() })
             }
         }
 

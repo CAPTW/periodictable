@@ -18,6 +18,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chemtable.interactive.core.designsystem.theme.ChemTableSpacing
 import com.chemtable.interactive.core.designsystem.theme.ChemTableTheme
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.feature.minigame.model.MoleculeElementLink
 import com.chemtable.interactive.feature.minigame.model.MoleculeGlossaryLink
 import java.text.SimpleDateFormat
@@ -71,6 +74,7 @@ fun MoleculeDexScreen(
         onOpenCalculator = onOpenCalculator,
         onOpenElement = onOpenElement,
         onOpenGlossary = onOpenGlossary,
+        onSelectBoardSize = viewModel::selectBoardSize,
     )
 }
 
@@ -83,6 +87,7 @@ internal fun MoleculeDexContent(
     onOpenCalculator: (String) -> Unit,
     onOpenElement: (Int) -> Unit,
     onOpenGlossary: (String) -> Unit,
+    onSelectBoardSize: (ClassicBoardSize) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -97,14 +102,26 @@ internal fun MoleculeDexContent(
         item {
             MoleculeDexSummary(state = state)
         }
+        item {
+            MoleculeDexBoardSizeSelector(
+                selected = state.selectedBoardSize,
+                onSelect = onSelectBoardSize,
+            )
+        }
         if (state.modeHighScores.isNotEmpty()) {
             item {
-                ModeHighScoresCard(scores = state.modeHighScores)
+                ModeHighScoresCard(
+                    boardSize = state.selectedBoardSize,
+                    scores = state.modeHighScores,
+                )
             }
         }
         if (state.difficultyHighScores.isNotEmpty()) {
             item {
-                DifficultyHighScoresCard(scores = state.difficultyHighScores)
+                DifficultyHighScoresCard(
+                    boardSize = state.selectedBoardSize,
+                    scores = state.difficultyHighScores,
+                )
             }
         }
         if (state.errorMessage != null) {
@@ -175,7 +192,10 @@ private fun MoleculeDexSummary(state: MoleculeDexUiState) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SummaryMetric(label = "발견", value = "${state.discoveredCount}개")
-            SummaryMetric(label = "전체 최고", value = state.highScore?.let { "${it}점" } ?: "-")
+            SummaryMetric(
+                label = "${state.selectedBoardSize.displayLabel} 최고",
+                value = state.highScore?.let { "${it}점" } ?: "-",
+            )
             SummaryMetric(
                 label = "최근 점수",
                 value = state.recentSessions.firstOrNull()?.let { "${it.score}점" } ?: "-",
@@ -185,13 +205,53 @@ private fun MoleculeDexSummary(state: MoleculeDexUiState) {
 }
 
 @Composable
-private fun ModeHighScoresCard(scores: List<MoleculeDexModeScore>) {
+private fun MoleculeDexBoardSizeSelector(
+    selected: ClassicBoardSize,
+    onSelect: (ClassicBoardSize) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("molecule_dex_board_size_selector"),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            "최고점수 보드 범위: ${selected.displayLabel}",
+            style = MaterialTheme.typography.labelMedium,
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ClassicBoardSize.entries.forEach { boardSize ->
+                FilterChip(
+                    selected = boardSize == selected,
+                    onClick = { onSelect(boardSize) },
+                    modifier = Modifier
+                        .testTag("molecule_dex_board_size_${boardSize.dimension}")
+                        .semantics {
+                            contentDescription = "${boardSize.accessibilityLabel} 최고점수 보기"
+                        },
+                    label = { Text(boardSize.displayLabel, maxLines = 1) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModeHighScoresCard(
+    boardSize: ClassicBoardSize,
+    scores: List<MoleculeDexModeScore>,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("모드별 최고점수", style = MaterialTheme.typography.titleMedium)
+            Text("${boardSize.displayLabel} 모드별 최고점수", style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -208,13 +268,16 @@ private fun ModeHighScoresCard(scores: List<MoleculeDexModeScore>) {
 }
 
 @Composable
-private fun DifficultyHighScoresCard(scores: List<MoleculeDexDifficultyScore>) {
+private fun DifficultyHighScoresCard(
+    boardSize: ClassicBoardSize,
+    scores: List<MoleculeDexDifficultyScore>,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("난이도별 최고점수", style = MaterialTheme.typography.titleMedium)
+            Text("${boardSize.displayLabel} 난이도별 최고점수", style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -409,7 +472,7 @@ private fun RecentSessionsCard(sessions: List<MoleculeDexSessionItem>) {
                     HorizontalDivider()
                 }
                 Text(
-                    text = "${session.difficultyLabel} · ${session.modeLabel} · ${if (session.success) "성공" else "종료"} · ${session.score}점 · ${formatDexTimestamp(session.playedAt)}",
+                    text = "${session.boardSizeLabel} · ${session.difficultyLabel} · ${session.modeLabel} · ${if (session.success) "성공" else "종료"} · ${session.score}점 · ${formatDexTimestamp(session.playedAt)}",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 val mission = session.missionFormula
@@ -514,6 +577,7 @@ private fun MoleculeDexPreview() {
             onOpenCalculator = {},
             onOpenElement = {},
             onOpenGlossary = {},
+            onSelectBoardSize = {},
         )
     }
 }

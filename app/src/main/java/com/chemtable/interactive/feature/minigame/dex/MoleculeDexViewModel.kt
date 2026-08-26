@@ -2,6 +2,7 @@ package com.chemtable.interactive.feature.minigame.dex
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.core.model.Element
 import com.chemtable.interactive.core.model.GlossaryTerm
 import com.chemtable.interactive.domain.model.GameMoleculeDiscovery
@@ -11,19 +12,26 @@ import com.chemtable.interactive.domain.usecase.GetElementsUseCase
 import com.chemtable.interactive.domain.usecase.GetGlossaryUseCase
 import com.chemtable.interactive.domain.usecase.GetHighScoreUseCase
 import com.chemtable.interactive.domain.usecase.GetRecentGameSessionsUseCase
+import com.chemtable.interactive.domain.repository.SettingsRepository
 import com.chemtable.interactive.feature.minigame.MoleculeElementLinkResolver
 import com.chemtable.interactive.feature.minigame.MoleculeGlossaryLinkResolver
 import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.GameMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class MoleculeDexViewModel @Inject constructor(
     getDiscoveredMoleculesUseCase: GetDiscoveredMoleculesUseCase,
@@ -33,63 +41,83 @@ class MoleculeDexViewModel @Inject constructor(
     getGlossaryUseCase: GetGlossaryUseCase,
     moleculeElementLinkResolver: MoleculeElementLinkResolver,
     moleculeGlossaryLinkResolver: MoleculeGlossaryLinkResolver,
+    settingsRepository: SettingsRepository,
 ) : ViewModel() {
+
+    private val selectedBoardSizeOverride = MutableStateFlow<ClassicBoardSize?>(null)
+
+    private val selectedBoardSize: Flow<ClassicBoardSize> = combine(
+        settingsRepository.settings.map { it.preferredClassicBoardSize },
+        selectedBoardSizeOverride,
+    ) { preferred, selected -> selected ?: preferred }
+        .distinctUntilChanged()
 
     private val baseInput: Flow<MoleculeDexInput> = combine(
         getDiscoveredMoleculesUseCase(),
-        getHighScoreUseCase(),
         getRecentGameSessionsUseCase(RECENT_SESSION_LIMIT),
         getElementsUseCase(),
         getGlossaryUseCase.allTerms(),
-    ) { discoveries, highScore, recentSessions, elements, glossaryTerms ->
+    ) { discoveries, recentSessions, elements, glossaryTerms ->
         MoleculeDexInput(
             discoveries = discoveries,
-            highScore = highScore,
             recentSessions = recentSessions,
             elements = elements,
             glossaryTerms = glossaryTerms,
         )
     }
 
-    private val difficultyHighScores: Flow<Map<String, Int?>> = combine(
-        getHighScoreUseCase(Difficulty.BEGINNER.name),
-        getHighScoreUseCase(Difficulty.INTERMEDIATE.name),
-        getHighScoreUseCase(Difficulty.ADVANCED.name),
-    ) { beginner, intermediate, advanced ->
-        mapOf(
-            Difficulty.BEGINNER.name to beginner,
-            Difficulty.INTERMEDIATE.name to intermediate,
-            Difficulty.ADVANCED.name to advanced,
-        )
-    }
-
-    private val modeHighScores: Flow<Map<String, Int?>> = combine(
-        getHighScoreUseCase(mode = GameMode.MISSION.name),
-        getHighScoreUseCase(mode = GameMode.ENDLESS.name),
-        getHighScoreUseCase(mode = GameMode.TIME_ATTACK.name),
-    ) { mission, endless, timeAttack ->
-        mapOf(
-            GameMode.MISSION.name to mission,
-            GameMode.ENDLESS.name to endless,
-            GameMode.TIME_ATTACK.name to timeAttack,
-        )
+    private val scopedScores: Flow<MoleculeDexScopedScores> = selectedBoardSize.flatMapLatest { boardSize ->
+        val difficultyHighScores = combine(
+            getHighScoreUseCase(Difficulty.BEGINNER.name, boardSize = boardSize),
+            getHighScoreUseCase(Difficulty.INTERMEDIATE.name, boardSize = boardSize),
+            getHighScoreUseCase(Difficulty.ADVANCED.name, boardSize = boardSize),
+        ) { beginner, intermediate, advanced ->
+            mapOf(
+                Difficulty.BEGINNER.name to beginner,
+                Difficulty.INTERMEDIATE.name to intermediate,
+                Difficulty.ADVANCED.name to advanced,
+            )
+        }
+        val modeHighScores = combine(
+            getHighScoreUseCase(mode = GameMode.MISSION.name, boardSize = boardSize),
+            getHighScoreUseCase(mode = GameMode.ENDLESS.name, boardSize = boardSize),
+            getHighScoreUseCase(mode = GameMode.TIME_ATTACK.name, boardSize = boardSize),
+        ) { mission, endless, timeAttack ->
+            mapOf(
+                GameMode.MISSION.name to mission,
+                GameMode.ENDLESS.name to endless,
+                GameMode.TIME_ATTACK.name to timeAttack,
+            )
+        }
+        combine(
+            getHighScoreUseCase(boardSize = boardSize),
+            difficultyHighScores,
+            modeHighScores,
+        ) { highScore, byDifficulty, byMode ->
+            MoleculeDexScopedScores(
+                boardSize = boardSize,
+                highScore = highScore,
+                difficultyHighScores = byDifficulty,
+                modeHighScores = byMode,
+            )
+        }
     }
 
     val uiState: StateFlow<MoleculeDexUiState> = combine(
         baseInput,
-        difficultyHighScores,
-        modeHighScores,
-    ) { input, highScoresByDifficulty, highScoresByMode ->
+        scopedScores,
+    ) { input, scores ->
         buildMoleculeDexUiState(
             discoveries = input.discoveries,
-            highScore = input.highScore,
-            modeHighScores = highScoresByMode,
-            difficultyHighScores = highScoresByDifficulty,
+            highScore = scores.highScore,
+            modeHighScores = scores.modeHighScores,
+            difficultyHighScores = scores.difficultyHighScores,
             recentSessions = input.recentSessions,
             elements = input.elements,
             glossaryTerms = input.glossaryTerms,
             elementLinkResolver = moleculeElementLinkResolver,
             glossaryLinkResolver = moleculeGlossaryLinkResolver,
+            selectedBoardSize = scores.boardSize,
         )
     }.catch {
         emit(
@@ -104,6 +132,10 @@ class MoleculeDexViewModel @Inject constructor(
         initialValue = MoleculeDexUiState(),
     )
 
+    fun selectBoardSize(boardSize: ClassicBoardSize) {
+        selectedBoardSizeOverride.value = boardSize
+    }
+
     private companion object {
         const val RECENT_SESSION_LIMIT = 5
     }
@@ -111,8 +143,14 @@ class MoleculeDexViewModel @Inject constructor(
 
 private data class MoleculeDexInput(
     val discoveries: List<GameMoleculeDiscovery>,
-    val highScore: Int?,
     val recentSessions: List<GameSession>,
     val elements: List<Element>,
     val glossaryTerms: List<GlossaryTerm>,
+)
+
+private data class MoleculeDexScopedScores(
+    val boardSize: ClassicBoardSize,
+    val highScore: Int?,
+    val difficultyHighScores: Map<String, Int?>,
+    val modeHighScores: Map<String, Int?>,
 )

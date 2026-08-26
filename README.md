@@ -29,7 +29,7 @@ ChemTable Interactive bundles its element, isotope, glossary, and recipe dataset
 | **Explore** | Zoomable periodic table, element details, isotope data, abundance, thermal, crystal, electron, and safety properties. |
 | **Find** | Search by name, symbol, atomic number, ranges, stability, decay filters, and sorting. |
 | **Calculate** | Parse molecular formulas with parentheses, hydrates, and charges; retain local history. |
-| **Learn by doing** | Compare properties, inspect heatmaps, keep notes, browse glossary links, and discover molecules in the mini-game. |
+| **Learn by doing** | Compare properties, inspect heatmaps, keep notes, browse glossary links, and discover molecules on selectable 4×4, 5×5, or 6×6 Classic boards. |
 
 ## Product flow
 
@@ -86,7 +86,9 @@ bash scripts/verify.sh
 - Unknown or unavailable values render as **N/A** rather than fabricated content.
 - User notes and calculator history remain local.
 - Bundled educational data is versioned with the app.
-- Interactive runtime verification still requires a device or emulator; the repository currently relies on JVM unit tests rather than `androidTest`.
+- Interactive runtime verification still requires a device or emulator. Focused `androidTest` coverage exercises Classic board dimensions, gesture dispatch, accessibility semantics, and the Room 6→7 migration.
+
+The Classic mini-game keeps 4×4 as its default, stores the preferred board size locally, and scopes session scores by board size. See [the P1 variable-board foundation note](docs/p1-variable-board-foundation.md) for the data and compatibility contract.
 
 ## Full technical reference
 

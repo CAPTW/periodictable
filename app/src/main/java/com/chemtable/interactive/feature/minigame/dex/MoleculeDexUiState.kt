@@ -1,6 +1,7 @@
 package com.chemtable.interactive.feature.minigame.dex
 
 import com.chemtable.interactive.core.model.Element
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.core.model.GlossaryTerm
 import com.chemtable.interactive.domain.model.GameMoleculeDiscovery
 import com.chemtable.interactive.domain.model.GameSession
@@ -16,6 +17,7 @@ data class MoleculeDexUiState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val highScore: Int? = null,
+    val selectedBoardSize: ClassicBoardSize = ClassicBoardSize.DEFAULT,
     val modeHighScores: List<MoleculeDexModeScore> = emptyList(),
     val difficultyHighScores: List<MoleculeDexDifficultyScore> = emptyList(),
     val discoveries: List<MoleculeDexItem> = emptyList(),
@@ -46,6 +48,8 @@ data class MoleculeDexSessionItem(
     val missionTargetCount: Int?,
     val playedAt: Long,
     val moleculesMade: List<String>,
+    val boardSize: Int = 4,
+    val boardSizeLabel: String = ClassicBoardSize.DEFAULT.displayLabel,
 )
 
 data class MoleculeDexDifficultyScore(
@@ -70,9 +74,11 @@ internal fun buildMoleculeDexUiState(
     glossaryTerms: List<GlossaryTerm>,
     elementLinkResolver: MoleculeElementLinkResolver,
     glossaryLinkResolver: MoleculeGlossaryLinkResolver,
+    selectedBoardSize: ClassicBoardSize = ClassicBoardSize.DEFAULT,
 ): MoleculeDexUiState = MoleculeDexUiState(
     isLoading = false,
     highScore = highScore,
+    selectedBoardSize = selectedBoardSize,
     modeHighScores = GameMode.entries.map { mode ->
         MoleculeDexModeScore(
             mode = mode.name,
@@ -110,6 +116,8 @@ internal fun buildMoleculeDexUiState(
             missionTargetCount = session.missionTargetCount,
             playedAt = session.playedAt,
             moleculesMade = session.moleculesMade,
+            boardSize = session.boardSize,
+            boardSizeLabel = ClassicBoardSize.fromPersistenceValue(session.boardSize).displayLabel,
         )
     },
 )

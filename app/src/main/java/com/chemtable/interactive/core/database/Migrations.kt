@@ -131,6 +131,11 @@ object DbMigrations {
         "CREATE INDEX IF NOT EXISTS index_game_sessions_mode ON game_sessions(mode)",
     )
 
+    internal val MIGRATION_6_7_SQL: List<String> = listOf(
+        "ALTER TABLE game_sessions ADD COLUMN boardSize INTEGER NOT NULL DEFAULT 4",
+        "CREATE INDEX IF NOT EXISTS index_game_sessions_boardSize ON game_sessions(boardSize)",
+    )
+
     val MIGRATION_2_3: Migration = object : Migration(2, 3) {
         override fun migrate(db: SupportSQLiteDatabase) {
             MIGRATION_2_3_SQL.forEach { statement -> db.execSQL(statement) }
@@ -155,8 +160,14 @@ object DbMigrations {
         }
     }
 
+    val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            MIGRATION_6_7_SQL.forEach { statement -> db.execSQL(statement) }
+        }
+    }
+
     /**
-     * Ordered migration chain (v2 -> v6). Single source of truth for the schema upgrade path;
+     * Ordered migration chain (v2 -> v7). Single source of truth for the schema upgrade path;
      * covered by MigrationSafetyTest. Keep this in sync with the @Database version in
      * [ChemTableDatabase] and the migrations registered in DatabaseModule.
      */
@@ -165,5 +176,6 @@ object DbMigrations {
         MIGRATION_3_4,
         MIGRATION_4_5,
         MIGRATION_5_6,
+        MIGRATION_6_7,
     )
 }

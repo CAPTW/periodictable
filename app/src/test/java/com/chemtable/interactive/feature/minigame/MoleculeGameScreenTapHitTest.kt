@@ -58,4 +58,28 @@ class MoleculeGameScreenTapHitTest {
             )
         )
     }
+
+    @Test
+    fun boardCellForTap_usesActualBoundsAndDynamicDimensionForFourFiveAndSix() {
+        listOf(4, 5, 6).forEach { boardSize ->
+            val width = 360f
+            val height = 300f
+            val cellWidth = width / boardSize
+            val cellHeight = height / boardSize
+            val expectedRow = boardSize - 1
+            val expectedCol = boardSize - 2
+
+            val position = boardCellForTap(
+                tapX = (expectedCol + 0.5f) * cellWidth,
+                tapY = (expectedRow + 0.5f) * cellHeight,
+                viewWidth = width,
+                viewHeight = height,
+                boardSize = boardSize,
+                cellPaddingPx = 1f,
+            )
+
+            assertEquals(expectedRow, position?.row)
+            assertEquals(expectedCol, position?.col)
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.chemtable.interactive.domain.usecase
 
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.domain.model.GameMoleculeDiscovery
 import com.chemtable.interactive.domain.model.GameResultRecord
 import com.chemtable.interactive.domain.model.GameSession
@@ -38,22 +39,22 @@ class RecordGameResultUseCaseTest {
 
         override fun observeRecentSessions(limit: Int): Flow<List<GameSession>> = flowOf(emptyList())
 
-        override fun observeHighScore(): Flow<Int?> = flowOf(null)
+        override fun observeHighScore(boardSize: ClassicBoardSize): Flow<Int?> = flowOf(null)
 
-        override fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?> = flowOf(null)
+        override fun observeHighScoreByDifficulty(difficulty: String, boardSize: ClassicBoardSize): Flow<Int?> = flowOf(null)
 
-        override fun observeHighScoreByMode(mode: String): Flow<Int?> = flowOf(null)
+        override fun observeHighScoreByMode(mode: String, boardSize: ClassicBoardSize): Flow<Int?> = flowOf(null)
 
-        override fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String): Flow<Int?> =
+        override fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String, boardSize: ClassicBoardSize): Flow<Int?> =
             flowOf(null)
 
-        override suspend fun getHighScore(): Int? = null
+        override suspend fun getHighScore(boardSize: ClassicBoardSize): Int? = null
 
-        override suspend fun getHighScoreByDifficulty(difficulty: String): Int? = null
+        override suspend fun getHighScoreByDifficulty(difficulty: String, boardSize: ClassicBoardSize): Int? = null
 
-        override suspend fun getHighScoreByMode(mode: String): Int? = null
+        override suspend fun getHighScoreByMode(mode: String, boardSize: ClassicBoardSize): Int? = null
 
-        override suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String): Int? = null
+        override suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String, boardSize: ClassicBoardSize): Int? = null
 
         override suspend fun recordGameResult(record: GameResultRecord) {
             recorded = record

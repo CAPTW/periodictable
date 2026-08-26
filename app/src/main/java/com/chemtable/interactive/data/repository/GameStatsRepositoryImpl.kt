@@ -1,6 +1,7 @@
 package com.chemtable.interactive.data.repository
 
 import androidx.room.withTransaction
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.core.database.ChemTableDatabase
 import com.chemtable.interactive.core.database.dao.GameStatsDao
 import com.chemtable.interactive.core.database.entity.GameMoleculeDiscoveryEntity
@@ -25,27 +26,39 @@ class GameStatsRepositoryImpl @Inject constructor(
     override fun observeRecentSessions(limit: Int): Flow<List<GameSession>> =
         dao.observeRecentSessions(limit).map { list -> list.map { it.toDomain() } }
 
-    override fun observeHighScore(): Flow<Int?> = dao.observeHighScore()
+    override fun observeHighScore(boardSize: ClassicBoardSize): Flow<Int?> =
+        dao.observeHighScore(boardSize.dimension)
 
-    override fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?> =
-        dao.observeHighScoreByDifficulty(difficulty)
+    override fun observeHighScoreByDifficulty(
+        difficulty: String,
+        boardSize: ClassicBoardSize,
+    ): Flow<Int?> = dao.observeHighScoreByDifficulty(difficulty, boardSize.dimension)
 
-    override fun observeHighScoreByMode(mode: String): Flow<Int?> =
-        dao.observeHighScoreByMode(mode)
+    override fun observeHighScoreByMode(mode: String, boardSize: ClassicBoardSize): Flow<Int?> =
+        dao.observeHighScoreByMode(mode, boardSize.dimension)
 
-    override fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String): Flow<Int?> =
-        dao.observeHighScoreByDifficultyAndMode(difficulty, mode)
+    override fun observeHighScoreByDifficultyAndMode(
+        difficulty: String,
+        mode: String,
+        boardSize: ClassicBoardSize,
+    ): Flow<Int?> = dao.observeHighScoreByDifficultyAndMode(difficulty, mode, boardSize.dimension)
 
-    override suspend fun getHighScore(): Int? = dao.getHighScore()
+    override suspend fun getHighScore(boardSize: ClassicBoardSize): Int? =
+        dao.getHighScore(boardSize.dimension)
 
-    override suspend fun getHighScoreByDifficulty(difficulty: String): Int? =
-        dao.getHighScoreByDifficulty(difficulty)
+    override suspend fun getHighScoreByDifficulty(
+        difficulty: String,
+        boardSize: ClassicBoardSize,
+    ): Int? = dao.getHighScoreByDifficulty(difficulty, boardSize.dimension)
 
-    override suspend fun getHighScoreByMode(mode: String): Int? =
-        dao.getHighScoreByMode(mode)
+    override suspend fun getHighScoreByMode(mode: String, boardSize: ClassicBoardSize): Int? =
+        dao.getHighScoreByMode(mode, boardSize.dimension)
 
-    override suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String): Int? =
-        dao.getHighScoreByDifficultyAndMode(difficulty, mode)
+    override suspend fun getHighScoreByDifficultyAndMode(
+        difficulty: String,
+        mode: String,
+        boardSize: ClassicBoardSize,
+    ): Int? = dao.getHighScoreByDifficultyAndMode(difficulty, mode, boardSize.dimension)
 
     override suspend fun recordGameResult(record: GameResultRecord) {
         val normalizedMoleculesMade = normalizeGameResultMolecules(record.moleculesMade)

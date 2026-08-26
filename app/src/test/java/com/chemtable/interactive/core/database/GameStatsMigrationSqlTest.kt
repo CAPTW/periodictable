@@ -59,4 +59,22 @@ class GameStatsMigrationSqlTest {
             assertTrue("Missing migration SQL fragment: $expected", sql.contains(expected))
         }
     }
+
+    @Test
+    fun migration6To7_addsBoardSizeWithFourByFourDefaultAndMatchingIndex() {
+        assertEquals(6, DbMigrations.MIGRATION_6_7.startVersion)
+        assertEquals(7, DbMigrations.MIGRATION_6_7.endVersion)
+
+        val sql = DbMigrations.MIGRATION_6_7_SQL.joinToString("\n")
+        listOf(
+            "ALTER TABLE game_sessions ADD COLUMN boardSize INTEGER NOT NULL DEFAULT 4",
+            "index_game_sessions_boardSize",
+            "game_sessions(boardSize)",
+        ).forEach { expected ->
+            assertTrue("Missing migration SQL fragment: $expected", sql.contains(expected))
+        }
+        listOf("DROP ", "DELETE ", "TRUNCATE", "UPDATE ").forEach { destructive ->
+            assertTrue("Migration must not contain $destructive", !sql.uppercase().contains(destructive))
+        }
+    }
 }

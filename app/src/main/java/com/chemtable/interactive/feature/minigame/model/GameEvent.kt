@@ -1,5 +1,7 @@
 package com.chemtable.interactive.feature.minigame.model
 
+import com.chemtable.interactive.core.model.ClassicBoardSize
+
 /** View -> ViewModel 단일 진입점 이벤트. */
 sealed interface GameEvent {
     data object StartGame : GameEvent
@@ -17,6 +19,9 @@ sealed interface GameEvent {
 
     /** Intro 에서 Mission/Endless 모드를 선택. 플레이 중에는 적용하지 않는다. */
     data class SelectMode(val mode: GameMode) : GameEvent
+
+    /** Intro 에서 Classic 보드 크기를 선택. 플레이 중에는 적용하지 않는다. */
+    data class SelectBoardSize(val boardSize: ClassicBoardSize) : GameEvent
 
     /** 만든 분자를 계산기로 보내 몰질량을 확인. */
     data class OpenCalculator(val formula: String) : GameEvent

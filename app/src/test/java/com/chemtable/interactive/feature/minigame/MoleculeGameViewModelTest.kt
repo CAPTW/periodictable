@@ -1,6 +1,8 @@
 package com.chemtable.interactive.feature.minigame
 
 import androidx.lifecycle.SavedStateHandle
+import com.chemtable.interactive.core.model.AppSettings
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.core.model.Element
 import com.chemtable.interactive.core.model.ElementCategory
 import com.chemtable.interactive.core.model.ElementProperty
@@ -15,6 +17,7 @@ import com.chemtable.interactive.domain.model.GameSession
 import com.chemtable.interactive.domain.repository.ElementRepository
 import com.chemtable.interactive.domain.repository.GameStatsRepository
 import com.chemtable.interactive.domain.repository.GlossaryRepository
+import com.chemtable.interactive.domain.repository.SettingsRepository
 import com.chemtable.interactive.domain.usecase.GetElementsUseCase
 import com.chemtable.interactive.domain.usecase.GetGlossaryUseCase
 import com.chemtable.interactive.domain.usecase.RecordGameResultUseCase
@@ -193,20 +196,26 @@ class MoleculeGameViewModelTest {
 
     private lateinit var viewModel: MoleculeGameViewModel
     private lateinit var gameStatsRepository: FakeGameStatsRepository
+    private lateinit var settingsRepository: FakeSettingsRepository
 
     @Before
     fun setUp() {
         gameStatsRepository = FakeGameStatsRepository()
-        viewModel = MoleculeGameViewModel(
+        settingsRepository = FakeSettingsRepository()
+        viewModel = createViewModel(settingsRepository)
+    }
+
+    private fun createViewModel(settings: SettingsRepository): MoleculeGameViewModel =
+        MoleculeGameViewModel(
             savedStateHandle = SavedStateHandle(),
             getElementsUseCase = getElementsUseCase,
             getGlossaryUseCase = getGlossaryUseCase,
             recordGameResultUseCase = RecordGameResultUseCase(gameStatsRepository),
+            settingsRepository = settings,
             molarMassCalculator = molarMassCalculator,
             moleculeElementLinkResolver = elementLinkResolver,
             moleculeGlossaryLinkResolver = glossaryLinkResolver
         )
-    }
 
     @Suppress("UNCHECKED_CAST")
     private fun forceSetState(transform: (GameUiState) -> GameUiState) {
@@ -1013,6 +1022,108 @@ class MoleculeGameViewModelTest {
         assertNull(effect)
     }
 
+    @Test
+    fun boardSizeDefaultsToFourAndRestoresPreferredSizeFromSettings() = runBlocking {
+        assertEquals(ClassicBoardSize.FOUR_BY_FOUR, viewModel.uiState.value.boardSize)
+
+        val restored = createViewModel(
+            FakeSettingsRepository(ClassicBoardSize.SIX_BY_SIX)
+        )
+        val restoredState = withTimeoutOrNull(1_000) {
+            restored.uiState.first { it.boardSize == ClassicBoardSize.SIX_BY_SIX }
+        }
+
+        assertEquals(ClassicBoardSize.SIX_BY_SIX, restoredState?.boardSize)
+        assertEquals(GamePhase.INTRO, restoredState?.phase)
+    }
+
+    @Test
+    fun selectingBoardSizeInIntroUpdatesImmediatelyPersistsAndSurvivesOtherSelectors() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectBoardSize(ClassicBoardSize.SIX_BY_SIX))
+
+        assertEquals(ClassicBoardSize.SIX_BY_SIX, viewModel.uiState.value.boardSize)
+        assertEquals(ClassicBoardSize.SIX_BY_SIX, settingsRepository.savedSizes.single())
+
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.ENDLESS))
+        viewModel.onEvent(GameEvent.SelectDifficulty(Difficulty.ADVANCED))
+
+        assertEquals(ClassicBoardSize.SIX_BY_SIX, viewModel.uiState.value.boardSize)
+    }
+
+    @Test
+    fun staleSettingsEmissionDoesNotRollbackExplicitIntroSelection() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectBoardSize(ClassicBoardSize.SIX_BY_SIX))
+
+        settingsRepository.emitBoardSize(ClassicBoardSize.FOUR_BY_FOUR)
+
+        val rolledBack = withTimeoutOrNull(200) {
+            viewModel.uiState.first { it.boardSize == ClassicBoardSize.FOUR_BY_FOUR }
+        }
+        assertNull(rolledBack)
+        assertEquals(ClassicBoardSize.SIX_BY_SIX, viewModel.uiState.value.boardSize)
+    }
+
+    @Test
+    fun boardSizeSelectionIsIgnoredOutsideIntro() {
+        listOf(GamePhase.PLAYING, GamePhase.PAUSED, GamePhase.RESULT).forEach { phase ->
+            forceSetState {
+                it.copy(
+                    phase = phase,
+                    boardSize = ClassicBoardSize.FOUR_BY_FOUR,
+                    board = BoardState.empty(ClassicBoardSize.FOUR_BY_FOUR),
+                )
+            }
+
+            viewModel.onEvent(GameEvent.SelectBoardSize(ClassicBoardSize.FIVE_BY_FIVE))
+
+            assertEquals(ClassicBoardSize.FOUR_BY_FOUR, viewModel.uiState.value.boardSize)
+        }
+        assertTrue(settingsRepository.savedSizes.isEmpty())
+    }
+
+    @Test
+    fun startAndRestartUseTheSelectedBoardSize() {
+        viewModel.onEvent(GameEvent.SelectBoardSize(ClassicBoardSize.FIVE_BY_FIVE))
+        viewModel.onEvent(GameEvent.StartGame)
+
+        assertEquals(5, viewModel.uiState.value.board.size)
+        assertEquals(ClassicBoardSize.FIVE_BY_FIVE, viewModel.uiState.value.board.boardSize)
+
+        viewModel.onEvent(GameEvent.Restart)
+
+        assertEquals(5, viewModel.uiState.value.board.size)
+        assertEquals(ClassicBoardSize.FIVE_BY_FIVE, viewModel.uiState.value.board.boardSize)
+    }
+
+    @Test
+    fun boardSizePersistenceFailureDoesNotCrashOrRollbackImmediateSelection() {
+        settingsRepository.throwOnSave = true
+
+        viewModel.onEvent(GameEvent.SelectBoardSize(ClassicBoardSize.SIX_BY_SIX))
+
+        assertEquals(ClassicBoardSize.SIX_BY_SIX, viewModel.uiState.value.boardSize)
+        assertEquals(1, settingsRepository.saveAttempts)
+    }
+
+    @Test
+    fun recordedResultContainsTheActiveBoardSize() = runBlocking {
+        viewModel.onEvent(GameEvent.SelectBoardSize(ClassicBoardSize.SIX_BY_SIX))
+        viewModel.onEvent(GameEvent.SelectMode(GameMode.TIME_ATTACK))
+        viewModel.onEvent(GameEvent.StartGame)
+        forceSetState {
+            it.copy(
+                phase = GamePhase.PLAYING,
+                showTutorial = false,
+                timeLeftMillis = 1L,
+                lastTimerTickAtMillis = 100L,
+            )
+        }
+
+        viewModel.onEvent(GameEvent.TimerTick(101L))
+
+        assertEquals(6, gameStatsRepository.records.single().boardSize)
+    }
+
     private class FakeGameStatsRepository : GameStatsRepository {
         val records = mutableListOf<GameResultRecord>()
         var recordAttempts = 0
@@ -1022,27 +1133,54 @@ class MoleculeGameViewModelTest {
 
         override fun observeRecentSessions(limit: Int): Flow<List<GameSession>> = flowOf(emptyList())
 
-        override fun observeHighScore(): Flow<Int?> = flowOf(null)
+        override fun observeHighScore(boardSize: ClassicBoardSize): Flow<Int?> = flowOf(null)
 
-        override fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?> = flowOf(null)
+        override fun observeHighScoreByDifficulty(difficulty: String, boardSize: ClassicBoardSize): Flow<Int?> = flowOf(null)
 
-        override fun observeHighScoreByMode(mode: String): Flow<Int?> = flowOf(null)
+        override fun observeHighScoreByMode(mode: String, boardSize: ClassicBoardSize): Flow<Int?> = flowOf(null)
 
-        override fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String): Flow<Int?> =
+        override fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String, boardSize: ClassicBoardSize): Flow<Int?> =
             flowOf(null)
 
-        override suspend fun getHighScore(): Int? = null
+        override suspend fun getHighScore(boardSize: ClassicBoardSize): Int? = null
 
-        override suspend fun getHighScoreByDifficulty(difficulty: String): Int? = null
+        override suspend fun getHighScoreByDifficulty(difficulty: String, boardSize: ClassicBoardSize): Int? = null
 
-        override suspend fun getHighScoreByMode(mode: String): Int? = null
+        override suspend fun getHighScoreByMode(mode: String, boardSize: ClassicBoardSize): Int? = null
 
-        override suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String): Int? = null
+        override suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String, boardSize: ClassicBoardSize): Int? = null
 
         override suspend fun recordGameResult(record: GameResultRecord) {
             recordAttempts++
             if (throwOnRecord) error("record failed")
             records += record
+        }
+    }
+
+    private class FakeSettingsRepository(
+        initialBoardSize: ClassicBoardSize = ClassicBoardSize.FOUR_BY_FOUR,
+    ) : SettingsRepository {
+        private val state = MutableStateFlow(
+            AppSettings.DEFAULT.copy(preferredClassicBoardSize = initialBoardSize)
+        )
+        override val settings: Flow<AppSettings> = state
+        val savedSizes = mutableListOf<ClassicBoardSize>()
+        var saveAttempts = 0
+        var throwOnSave = false
+
+        override suspend fun setThemeMode(mode: com.chemtable.interactive.core.model.ThemeMode) = Unit
+        override suspend fun setFontScale(scale: Float) = Unit
+        override suspend fun setTableViewMode(mode: com.chemtable.interactive.core.model.TableViewMode) = Unit
+
+        override suspend fun setPreferredClassicBoardSize(size: ClassicBoardSize) {
+            saveAttempts++
+            if (throwOnSave) error("preference write failed")
+            savedSizes += size
+            state.value = state.value.copy(preferredClassicBoardSize = size)
+        }
+
+        fun emitBoardSize(size: ClassicBoardSize) {
+            state.value = state.value.copy(preferredClassicBoardSize = size)
         }
     }
 }

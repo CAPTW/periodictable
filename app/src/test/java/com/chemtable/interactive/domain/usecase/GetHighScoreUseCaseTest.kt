@@ -1,5 +1,6 @@
 package com.chemtable.interactive.domain.usecase
 
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.domain.model.GameMoleculeDiscovery
 import com.chemtable.interactive.domain.model.GameResultRecord
 import com.chemtable.interactive.domain.model.GameSession
@@ -53,32 +54,89 @@ class GetHighScoreUseCaseTest {
         assertEquals(null, useCase.current(mode = "TIME_ATTACK"))
     }
 
+    @Test
+    fun overallModeAndDifficultyScoresAreIsolatedByBoardSize() = runBlocking {
+        val useCase = GetHighScoreUseCase(FakeGameStatsRepository())
+
+        assertEquals(900, useCase(boardSize = ClassicBoardSize.FOUR_BY_FOUR).first())
+        assertEquals(1_500, useCase(boardSize = ClassicBoardSize.FIVE_BY_FIVE).first())
+        assertEquals(2_400, useCase(boardSize = ClassicBoardSize.SIX_BY_SIX).first())
+        assertEquals(
+            2_100,
+            useCase(
+                difficulty = "ADVANCED",
+                mode = "ENDLESS",
+                boardSize = ClassicBoardSize.SIX_BY_SIX,
+            ).first(),
+        )
+        assertEquals(
+            1_100,
+            useCase.current(
+                difficulty = "ADVANCED",
+                mode = "ENDLESS",
+                boardSize = ClassicBoardSize.FOUR_BY_FOUR,
+            ),
+        )
+    }
+
     private class FakeGameStatsRepository : GameStatsRepository {
         override fun observeDiscoveredMolecules(): Flow<List<GameMoleculeDiscovery>> = flowOf(emptyList())
 
         override fun observeRecentSessions(limit: Int): Flow<List<GameSession>> = flowOf(emptyList())
 
-        override fun observeHighScore(): Flow<Int?> = flowOf(900)
+        override fun observeHighScore(boardSize: ClassicBoardSize): Flow<Int?> = flowOf(
+            when (boardSize) {
+                ClassicBoardSize.FOUR_BY_FOUR -> 900
+                ClassicBoardSize.FIVE_BY_FIVE -> 1_500
+                ClassicBoardSize.SIX_BY_SIX -> 2_400
+            }
+        )
 
-        override fun observeHighScoreByDifficulty(difficulty: String): Flow<Int?> =
+        override fun observeHighScoreByDifficulty(
+            difficulty: String,
+            boardSize: ClassicBoardSize,
+        ): Flow<Int?> =
             flowOf(if (difficulty == "INTERMEDIATE") 700 else null)
 
-        override fun observeHighScoreByMode(mode: String): Flow<Int?> =
+        override fun observeHighScoreByMode(mode: String, boardSize: ClassicBoardSize): Flow<Int?> =
             flowOf(if (mode == "ENDLESS") 1200 else null)
 
-        override fun observeHighScoreByDifficultyAndMode(difficulty: String, mode: String): Flow<Int?> =
-            flowOf(if (difficulty == "ADVANCED" && mode == "ENDLESS") 1100 else null)
+        override fun observeHighScoreByDifficultyAndMode(
+            difficulty: String,
+            mode: String,
+            boardSize: ClassicBoardSize,
+        ): Flow<Int?> = flowOf(
+            if (difficulty == "ADVANCED" && mode == "ENDLESS") {
+                if (boardSize == ClassicBoardSize.SIX_BY_SIX) 2_100 else 1_100
+            } else {
+                null
+            }
+        )
 
-        override suspend fun getHighScore(): Int? = 900
+        override suspend fun getHighScore(boardSize: ClassicBoardSize): Int? = when (boardSize) {
+            ClassicBoardSize.FOUR_BY_FOUR -> 900
+            ClassicBoardSize.FIVE_BY_FIVE -> 1_500
+            ClassicBoardSize.SIX_BY_SIX -> 2_400
+        }
 
-        override suspend fun getHighScoreByDifficulty(difficulty: String): Int? =
+        override suspend fun getHighScoreByDifficulty(
+            difficulty: String,
+            boardSize: ClassicBoardSize,
+        ): Int? =
             if (difficulty == "INTERMEDIATE") 700 else null
 
-        override suspend fun getHighScoreByMode(mode: String): Int? =
+        override suspend fun getHighScoreByMode(mode: String, boardSize: ClassicBoardSize): Int? =
             if (mode == "ENDLESS") 1200 else null
 
-        override suspend fun getHighScoreByDifficultyAndMode(difficulty: String, mode: String): Int? =
-            if (difficulty == "ADVANCED" && mode == "ENDLESS") 1100 else null
+        override suspend fun getHighScoreByDifficultyAndMode(
+            difficulty: String,
+            mode: String,
+            boardSize: ClassicBoardSize,
+        ): Int? = if (difficulty == "ADVANCED" && mode == "ENDLESS") {
+            if (boardSize == ClassicBoardSize.SIX_BY_SIX) 2_100 else 1_100
+        } else {
+            null
+        }
 
         override suspend fun recordGameResult(record: GameResultRecord) = Unit
     }

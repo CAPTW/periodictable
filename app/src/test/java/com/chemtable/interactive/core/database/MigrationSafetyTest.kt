@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * SQL-level safety tests for the Room migration chain (v2 -> v6).
+ * SQL-level safety tests for the Room migration chain (v2 -> v7).
  *
  * These run on the JVM with no device/emulator. They guarantee that the schema upgrade path is
  * contiguous, purely additive (never drops or deletes existing element / glossary / note data),
@@ -21,6 +21,7 @@ class MigrationSafetyTest {
         3 to 4 -> DbMigrations.MIGRATION_3_4_SQL
         4 to 5 -> DbMigrations.MIGRATION_4_5_SQL
         5 to 6 -> DbMigrations.MIGRATION_5_6_SQL
+        6 to 7 -> DbMigrations.MIGRATION_6_7_SQL
         else -> error("No SQL exposed for migration ${migration.startVersion}->${migration.endVersion}")
     }
 
@@ -28,11 +29,11 @@ class MigrationSafetyTest {
         DbMigrations.ALL.flatMap { sqlOf(it) }.joinToString("\n").uppercase()
 
     @Test
-    fun migrationChain_reachesVersion6Contiguously() {
+    fun migrationChain_reachesVersion7Contiguously() {
         val ordered = DbMigrations.ALL.sortedBy { it.startVersion }
-        assertEquals("Expected 4 migrations (2->3->4->5->6)", 4, ordered.size)
+        assertEquals("Expected 5 migrations (2->3->4->5->6->7)", 5, ordered.size)
         assertEquals("Chain must start at version 2", 2, ordered.first().startVersion)
-        assertEquals("Chain must reach version 6", 6, ordered.last().endVersion)
+        assertEquals("Chain must reach version 7", 7, ordered.last().endVersion)
         ordered.zipWithNext().forEach { (a, b) ->
             assertEquals(
                 "Gap/overlap in migration chain between ${a.startVersion}->${a.endVersion} " +

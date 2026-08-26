@@ -9,4 +9,5 @@ data class GameResultRecord(
     val missionTargetCount: Int?,
     val playedAt: Long,
     val moleculesMade: List<String>,
+    val boardSize: Int = 4,
 )

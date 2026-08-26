@@ -3,6 +3,7 @@ package com.chemtable.interactive.feature.minigame
 import com.chemtable.interactive.feature.minigame.engine.RecipeBook
 import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.MissionDifficultyConfigs
+import com.chemtable.interactive.feature.minigame.model.MissionDifficultyConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -15,7 +16,6 @@ class MissionDifficultyConfigsTest {
         val config = MissionDifficultyConfigs.forDifficulty(Difficulty.BEGINNER)
 
         assertEquals(Difficulty.BEGINNER, config.difficulty)
-        assertEquals(4, config.boardSize)
         assertEquals(4, config.initialBlockCount)
         assertEquals(listOf("H", "H", "H", "H", "O", "O", "O", "Na", "Cl"), config.spawnSymbols)
         assertEquals(null, config.movesLeft)
@@ -29,7 +29,6 @@ class MissionDifficultyConfigsTest {
         val config = MissionDifficultyConfigs.forDifficulty(Difficulty.INTERMEDIATE)
 
         assertEquals(Difficulty.INTERMEDIATE, config.difficulty)
-        assertEquals(4, config.boardSize)
         assertEquals(4, config.initialBlockCount)
         assertTrue(config.spawnSymbols.contains("C"))
         assertTrue(config.spawnSymbols.contains("N"))
@@ -44,7 +43,6 @@ class MissionDifficultyConfigsTest {
         val config = MissionDifficultyConfigs.forDifficulty(Difficulty.ADVANCED)
 
         assertEquals(Difficulty.ADVANCED, config.difficulty)
-        assertEquals(4, config.boardSize)
         assertEquals(5, config.initialBlockCount)
         assertEquals(36, config.movesLeft)
         assertEquals(60_000L, config.timeAttackLimitMillis)
@@ -67,5 +65,10 @@ class MissionDifficultyConfigsTest {
                 assertNotNull(RecipeBook.DEFAULT_RECIPES.firstOrNull { it.productFormula == target.formula })
             }
         }
+    }
+
+    @Test
+    fun difficultyConfigDoesNotOwnACompetingBoardSize() {
+        assertTrue(MissionDifficultyConfig::class.java.declaredFields.none { it.name == "boardSize" })
     }
 }

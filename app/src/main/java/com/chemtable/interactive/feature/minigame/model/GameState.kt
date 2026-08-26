@@ -1,5 +1,7 @@
 package com.chemtable.interactive.feature.minigame.model
 
+import com.chemtable.interactive.core.model.ClassicBoardSize
+
 /** 게임 화면 단계. 결과/일시정지는 별도 라우트가 아니라 이 phase 로 표현한다(Phase 0 spec). */
 enum class GamePhase { INTRO, PLAYING, PAUSED, RESULT }
 
@@ -30,6 +32,7 @@ data class SelectedMoleculeSheet(
 /** 게임 화면 UI 상태(단일 소스). */
 data class GameUiState(
     val phase: GamePhase,
+    val boardSize: ClassicBoardSize,
     val board: BoardState,
     val score: Int,
     val combo: Int,
@@ -49,7 +52,8 @@ data class GameUiState(
     companion object {
         fun initial(): GameUiState = GameUiState(
             phase = GamePhase.INTRO,
-            board = BoardState.empty(4),
+            boardSize = ClassicBoardSize.DEFAULT,
+            board = BoardState.empty(ClassicBoardSize.DEFAULT),
             score = 0,
             combo = 0,
             missionTarget = null,

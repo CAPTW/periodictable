@@ -19,6 +19,7 @@ data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.LIGHT,
     val fontScale: Float = 1f,
     val tableViewMode: TableViewMode = TableViewMode.FIT,
+    val preferredClassicBoardSize: ClassicBoardSize = ClassicBoardSize.DEFAULT,
 ) {
     companion object {
         const val MIN_FONT_SCALE = 0.85f

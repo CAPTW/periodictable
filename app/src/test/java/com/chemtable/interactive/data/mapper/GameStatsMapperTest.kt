@@ -37,6 +37,7 @@ class GameStatsMapperTest {
             missionTargetCount = 2,
             playedAt = 300L,
             moleculesMade = listOf("CO2", "NaCl"),
+            boardSize = 6,
         )
 
         val domain = entity.toDomain()
@@ -50,6 +51,7 @@ class GameStatsMapperTest {
         assertEquals(2, domain.missionTargetCount)
         assertEquals(300L, domain.playedAt)
         assertEquals(listOf("CO2", "NaCl"), domain.moleculesMade)
+        assertEquals(6, domain.boardSize)
     }
 
     @Test
@@ -63,6 +65,7 @@ class GameStatsMapperTest {
             missionTargetCount = null,
             playedAt = 400L,
             moleculesMade = listOf("H2O", "H2O", "CO2"),
+            boardSize = 5,
         )
 
         val entity = record.toEntity()
@@ -76,5 +79,6 @@ class GameStatsMapperTest {
         assertEquals(null, entity.missionTargetCount)
         assertEquals(400L, entity.playedAt)
         assertEquals(listOf("H2O", "H2O", "CO2"), entity.moleculesMade)
+        assertEquals(5, entity.boardSize)
     }
 }

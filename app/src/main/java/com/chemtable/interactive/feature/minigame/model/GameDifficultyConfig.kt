@@ -2,7 +2,6 @@ package com.chemtable.interactive.feature.minigame.model
 
 data class MissionDifficultyConfig(
     val difficulty: Difficulty,
-    val boardSize: Int = 4,
     val initialBlockCount: Int,
     val spawnSymbols: List<String>,
     val missionCandidates: List<MissionTargetSpec>,

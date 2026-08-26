@@ -1,6 +1,7 @@
 package com.chemtable.interactive.core.database.entity
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
@@ -23,6 +24,10 @@ import androidx.room.PrimaryKey
             value = ["mode"],
             name = "index_game_sessions_mode",
         ),
+        Index(
+            value = ["boardSize"],
+            name = "index_game_sessions_boardSize",
+        ),
     ],
 )
 data class GameSessionEntity(
@@ -35,4 +40,5 @@ data class GameSessionEntity(
     val missionTargetCount: Int?,
     val playedAt: Long,
     val moleculesMade: List<String>,
+    @ColumnInfo(defaultValue = "4") val boardSize: Int = 4,
 )

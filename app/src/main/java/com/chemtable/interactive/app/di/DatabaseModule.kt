@@ -34,7 +34,8 @@ object DatabaseModule {
         DbMigrations.MIGRATION_2_3,
         DbMigrations.MIGRATION_3_4,
         DbMigrations.MIGRATION_4_5,
-        DbMigrations.MIGRATION_5_6
+        DbMigrations.MIGRATION_5_6,
+        DbMigrations.MIGRATION_6_7,
     ).build()
 
     @Provides

@@ -4,8 +4,10 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.chemtable.interactive.core.model.AppSettings
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.core.model.TableViewMode
 import com.chemtable.interactive.core.model.ThemeMode
 import com.chemtable.interactive.domain.repository.SettingsRepository
@@ -24,6 +26,9 @@ class SettingsRepositoryImpl @Inject constructor(
             themeMode = parseThemeMode(prefs[KEY_THEME]),
             fontScale = clampFontScale(prefs[KEY_FONT_SCALE] ?: AppSettings.DEFAULT.fontScale),
             tableViewMode = parseTableViewMode(prefs[KEY_TABLE_VIEW_MODE]),
+            preferredClassicBoardSize = ClassicBoardSize.fromPersistenceValue(
+                prefs[KEY_PREFERRED_CLASSIC_BOARD_SIZE]
+            ),
         )
     }
 
@@ -39,10 +44,15 @@ class SettingsRepositoryImpl @Inject constructor(
         dataStore.edit { it[KEY_TABLE_VIEW_MODE] = mode.name }
     }
 
+    override suspend fun setPreferredClassicBoardSize(size: ClassicBoardSize) {
+        dataStore.edit { it[KEY_PREFERRED_CLASSIC_BOARD_SIZE] = size.persistenceValue }
+    }
+
     companion object {
         private val KEY_THEME = stringPreferencesKey("theme_mode")
         private val KEY_FONT_SCALE = floatPreferencesKey("font_scale")
         private val KEY_TABLE_VIEW_MODE = stringPreferencesKey("table_view_mode")
+        private val KEY_PREFERRED_CLASSIC_BOARD_SIZE = intPreferencesKey("preferred_classic_board_size")
 
         /** Maps a stored string back to a [ThemeMode], falling back to the default for unknown/null. */
         fun parseThemeMode(raw: String?): ThemeMode =

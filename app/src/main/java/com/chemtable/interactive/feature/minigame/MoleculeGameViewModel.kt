@@ -5,13 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chemtable.interactive.core.model.Element
 import com.chemtable.interactive.core.model.GlossaryTerm
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.core.util.MolarMassCalculator
 import com.chemtable.interactive.domain.model.GameResultRecord
+import com.chemtable.interactive.domain.repository.SettingsRepository
 import com.chemtable.interactive.domain.usecase.GetElementsUseCase
 import com.chemtable.interactive.domain.usecase.GetGlossaryUseCase
 import com.chemtable.interactive.domain.usecase.RecordGameResultUseCase
 import com.chemtable.interactive.feature.minigame.engine.BoardEngine
 import com.chemtable.interactive.feature.minigame.engine.FormulaMassResolver
+import com.chemtable.interactive.feature.minigame.model.BoardState
 import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.Direction
 import com.chemtable.interactive.feature.minigame.model.GameEffect
@@ -48,6 +51,7 @@ class MoleculeGameViewModel @Inject constructor(
     getElementsUseCase: GetElementsUseCase,
     getGlossaryUseCase: GetGlossaryUseCase,
     private val recordGameResultUseCase: RecordGameResultUseCase,
+    private val settingsRepository: SettingsRepository,
     private val molarMassCalculator: MolarMassCalculator,
     private val moleculeElementLinkResolver: MoleculeElementLinkResolver,
     private val moleculeGlossaryLinkResolver: MoleculeGlossaryLinkResolver,
@@ -65,6 +69,7 @@ class MoleculeGameViewModel @Inject constructor(
     private var glossaryTerms: List<GlossaryTerm> = emptyList()
     private var engine: BoardEngine? = null
     private var hasSeenTutorial = false
+    private var hasExplicitBoardSizeSelection = false
     private val madeCount = mutableMapOf<String, Int>()
     private var resultRecordedForSession = false
 
@@ -91,6 +96,20 @@ class MoleculeGameViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            settingsRepository.settings.collect { settings ->
+                _uiState.update { state ->
+                    if (state.phase == GamePhase.INTRO && !hasExplicitBoardSizeSelection) {
+                        state.copy(
+                            boardSize = settings.preferredClassicBoardSize,
+                            board = BoardState.empty(settings.preferredClassicBoardSize),
+                        )
+                    } else {
+                        state
+                    }
+                }
+            }
+        }
     }
 
     fun onEvent(event: GameEvent) {
@@ -99,6 +118,7 @@ class MoleculeGameViewModel @Inject constructor(
             GameEvent.Restart -> startGame()
             is GameEvent.SelectDifficulty -> selectDifficulty(event.difficulty)
             is GameEvent.SelectMode -> selectMode(event.mode)
+            is GameEvent.SelectBoardSize -> selectBoardSize(event.boardSize)
             is GameEvent.Swipe -> handleSwipe(event.direction)
             is GameEvent.TimerTick -> handleTimerTick(event.nowMillis)
             GameEvent.Pause -> _uiState.update {
@@ -177,11 +197,37 @@ class MoleculeGameViewModel @Inject constructor(
         }
     }
 
+    private fun selectBoardSize(boardSize: ClassicBoardSize) {
+        var changed = false
+        _uiState.update { state ->
+            if (state.phase == GamePhase.INTRO) {
+                hasExplicitBoardSizeSelection = true
+                if (state.boardSize != boardSize) {
+                    changed = true
+                    state.copy(
+                        boardSize = boardSize,
+                        board = BoardState.empty(boardSize),
+                    )
+                } else {
+                    state
+                }
+            } else {
+                state
+            }
+        }
+        if (changed) {
+            viewModelScope.launch {
+                runCatching { settingsRepository.setPreferredClassicBoardSize(boardSize) }
+            }
+        }
+    }
+
     private fun startGame() {
         if (elements.isEmpty()) return
         val currentState = _uiState.value
         val difficulty = currentState.difficulty
         val mode = currentState.mode
+        val boardSize = currentState.boardSize
         val config = MissionDifficultyConfigs.forDifficulty(difficulty)
         val activeEngine = createEngineForDifficulty(difficulty)
         engine = activeEngine
@@ -202,7 +248,7 @@ class MoleculeGameViewModel @Inject constructor(
         val board = activeEngine.seedBoard(
             count = config.initialBlockCount,
             startElementSpec = startSpec,
-            size = config.boardSize,
+            boardSize = boardSize,
         )
         val timeLimitMillis = if (mode == GameMode.TIME_ATTACK) config.timeAttackLimitMillis else null
         val firstTime = !hasSeenTutorial
@@ -351,6 +397,7 @@ class MoleculeGameViewModel @Inject constructor(
             missionTargetCount = state.missionTarget?.count,
             playedAt = System.currentTimeMillis(),
             moleculesMade = madeMoleculesForRecord(),
+            boardSize = state.boardSize.dimension,
         )
 
         viewModelScope.launch {

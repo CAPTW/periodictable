@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
@@ -55,6 +57,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -71,6 +74,7 @@ import com.chemtable.interactive.core.designsystem.theme.ChemTableColors
 import com.chemtable.interactive.core.designsystem.theme.ChemTableTheme
 import com.chemtable.interactive.core.designsystem.theme.CustomShapes
 import com.chemtable.interactive.core.model.ElementCategory
+import com.chemtable.interactive.core.model.ClassicBoardSize
 import com.chemtable.interactive.feature.minigame.model.BoardState
 import com.chemtable.interactive.feature.minigame.model.Difficulty
 import com.chemtable.interactive.feature.minigame.model.Direction
@@ -98,7 +102,6 @@ internal sealed interface FeedbackUi {
 
 private val BoardTapThreshold = 18.dp
 private val BoardSwipeThreshold = 40.dp
-private val BoardCellPadding = 3.dp
 private const val TimeAttackTickIntervalMillis = 250L
 
 private data class ModeOptionUi(
@@ -243,7 +246,10 @@ internal fun MoleculeGameContent(
 @Composable
 private fun IntroContent(state: GameUiState, onEvent: (GameEvent) -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -274,6 +280,17 @@ private fun IntroContent(state: GameUiState, onEvent: (GameEvent) -> Unit) {
             selected = state.difficulty,
             onSelect = { onEvent(GameEvent.SelectDifficulty(it)) },
         )
+        Spacer(Modifier.height(12.dp))
+        BoardSizeSelector(
+            selected = state.boardSize,
+            onSelect = { onEvent(GameEvent.SelectBoardSize(it)) },
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = boardSizeExplanation(state.boardSize),
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+        )
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = { onEvent(GameEvent.StartGame) },
@@ -293,14 +310,22 @@ private fun PlayingContent(state: GameUiState, onEvent: (GameEvent) -> Unit, sha
     Column(modifier = Modifier.fillMaxSize()) {
         HudBar(state = state, onPause = { onEvent(GameEvent.Pause) })
         Spacer(Modifier.height(12.dp))
-        GameBoardView(
-            board = state.board,
-            enabled = state.phase == GamePhase.PLAYING,
-            shakeTrigger = shakeTrigger,
-            onSwipe = { onEvent(GameEvent.Swipe(it)) },
-            onBlockTap = { onEvent(GameEvent.BlockTapped(it)) },
-            modifier = Modifier.fillMaxWidth(),
-        )
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            val boardExtent = minOf(maxWidth, maxHeight)
+            GameBoardView(
+                board = state.board,
+                enabled = state.phase == GamePhase.PLAYING,
+                shakeTrigger = shakeTrigger,
+                onSwipe = { onEvent(GameEvent.Swipe(it)) },
+                onBlockTap = { onEvent(GameEvent.BlockTapped(it)) },
+                modifier = Modifier.size(boardExtent),
+            )
+        }
         Spacer(Modifier.height(8.dp))
         Text(
             text = "상하좌우로 스와이프해 같은 줄의 블록을 모으세요",
@@ -356,12 +381,53 @@ private fun HudBar(state: GameUiState, onPause: () -> Unit) {
                 Text("콤보 x${state.combo}", style = MaterialTheme.typography.labelSmall)
             }
             Text("난이도 ${state.difficulty.labelKo()}", style = MaterialTheme.typography.labelSmall)
+            Text("보드 ${state.boardSize.displayLabel}", style = MaterialTheme.typography.labelSmall)
             state.movesLeft?.let { moves ->
                 Text("남은 이동 $moves", style = MaterialTheme.typography.labelSmall)
             }
         }
         OutlinedButton(onClick = onPause) { Text("일시정지") }
     }
+}
+
+@Composable
+internal fun BoardSizeSelector(
+    selected: ClassicBoardSize,
+    onSelect: (ClassicBoardSize) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.testTag("molecule_game_board_size_selector"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("보드 크기", style = MaterialTheme.typography.labelMedium)
+        Spacer(Modifier.height(6.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        ) {
+            ClassicBoardSize.entries.forEach { boardSize ->
+                FilterChip(
+                    selected = boardSize == selected,
+                    onClick = { onSelect(boardSize) },
+                    modifier = Modifier
+                        .testTag("molecule_game_board_size_${boardSize.dimension}")
+                        .semantics {
+                            contentDescription = "${boardSize.accessibilityLabel} 선택"
+                        },
+                    label = { Text(boardSize.displayLabel, maxLines = 1) },
+                )
+            }
+        }
+    }
+}
+
+private fun boardSizeExplanation(boardSize: ClassicBoardSize): String = when (boardSize) {
+    ClassicBoardSize.FOUR_BY_FOUR -> "빠르게 즐기는 기본 Classic 보드예요."
+    ClassicBoardSize.FIVE_BY_FIVE -> "같은 규칙을 더 넓은 5×5 보드에서 즐겨요."
+    ClassicBoardSize.SIX_BY_SIX -> "같은 규칙을 가장 넓은 6×6 보드에서 즐겨요."
 }
 
 @Composable
@@ -431,7 +497,7 @@ private fun DifficultySelector(
 }
 
 @Composable
-private fun GameBoardView(
+internal fun GameBoardView(
     board: BoardState,
     enabled: Boolean,
     shakeTrigger: Int,
@@ -442,7 +508,8 @@ private fun GameBoardView(
     val density = LocalDensity.current
     val tapThreshold = with(density) { BoardTapThreshold.toPx() }
     val swipeThreshold = with(density) { BoardSwipeThreshold.toPx() }
-    val cellHitPadding = with(density) { BoardCellPadding.toPx() }
+    val visualProfile = boardCellVisualProfile(board.boardSize)
+    val cellHitPadding = with(density) { visualProfile.outerPaddingDp.dp.toPx() }
 
     val currentBoard by rememberUpdatedState(board)
     val currentOnSwipe by rememberUpdatedState(onSwipe)
@@ -460,6 +527,10 @@ private fun GameBoardView(
 
     Box(
         modifier = modifier
+            .testTag(MoleculeGameBoardTestTag)
+            .semantics {
+                contentDescription = boardRootContentDescription(board.boardSize)
+            }
             .offset { IntOffset(shakeX.value.roundToInt(), 0) }
             .aspectRatio(1f)
             .pointerInput(enabled) {
@@ -529,13 +600,26 @@ private fun GameBoardView(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .padding(3.dp),
+                                .padding(visualProfile.outerPaddingDp.dp)
+                                .testTag(boardCellTestTag(r, c))
+                                .semantics(mergeDescendants = true) {
+                                    contentDescription = boardCellContentDescription(board, r, c)
+                                },
                         ) {
                             when (val block = board.blockAt(r, c)) {
-                                is ElementBlock -> ElementBlockView(block, Modifier.fillMaxSize())
+                                is ElementBlock -> ElementBlockView(
+                                    block = block,
+                                    visualProfile = visualProfile,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .testTag(boardBlockTestTag(r, c)),
+                                )
                                 is MoleculeBlock -> MoleculeBlockView(
                                     block = block,
-                                    modifier = Modifier.fillMaxSize(),
+                                    visualProfile = visualProfile,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .testTag(boardBlockTestTag(r, c)),
                                     onOpenOptions = { currentOnBlockTap(block.id) },
                                 )
                                 null -> EmptyCell(Modifier.fillMaxSize())
@@ -559,7 +643,11 @@ private fun EmptyCell(modifier: Modifier = Modifier) {
 
 /** 원소 블록 — ElementCell 과 동일한 디자인 토큰(카테고리 색 + elementCell shape). */
 @Composable
-private fun ElementBlockView(block: ElementBlock, modifier: Modifier = Modifier) {
+private fun ElementBlockView(
+    block: ElementBlock,
+    visualProfile: BoardCellVisualProfile,
+    modifier: Modifier = Modifier,
+) {
     val displayName = block.nameKo.ifBlank { block.symbol }
     Card(
         modifier = modifier.semantics(mergeDescendants = true) {
@@ -571,19 +659,27 @@ private fun ElementBlockView(block: ElementBlock, modifier: Modifier = Modifier)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(4.dp),
+                .padding(visualProfile.contentPaddingDp.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = block.symbol,
-                style = MaterialTheme.typography.titleLarge,
+                style = when (visualProfile.outerPaddingDp) {
+                    3f -> MaterialTheme.typography.titleLarge
+                    2f -> MaterialTheme.typography.titleMedium
+                    else -> MaterialTheme.typography.titleSmall
+                },
                 fontWeight = FontWeight.Bold,
+                maxLines = 1,
             )
-            Text(
-                text = formatMass(block.molarMass),
-                style = MaterialTheme.typography.labelSmall,
-            )
+            if (visualProfile.showSecondaryMass) {
+                Text(
+                    text = formatMass(block.molarMass),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
@@ -592,6 +688,7 @@ private fun ElementBlockView(block: ElementBlock, modifier: Modifier = Modifier)
 @Composable
 private fun MoleculeBlockView(
     block: MoleculeBlock,
+    visualProfile: BoardCellVisualProfile,
     modifier: Modifier = Modifier,
     onOpenOptions: (() -> Unit)? = null,
 ) {
@@ -612,21 +709,29 @@ private fun MoleculeBlockView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(4.dp),
+                .padding(visualProfile.contentPaddingDp.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = formulaToAnnotated(block.formula),
-                style = MaterialTheme.typography.titleMedium,
+                style = if (visualProfile.outerPaddingDp >= 3f) {
+                    MaterialTheme.typography.titleMedium
+                } else {
+                    MaterialTheme.typography.titleSmall
+                },
                 fontWeight = FontWeight.Bold,
                 color = ChemTableColors.onPrimary,
+                maxLines = 1,
             )
-            Text(
-                text = formatMass(block.massScore),
-                style = MaterialTheme.typography.labelSmall,
-                color = ChemTableColors.onPrimary,
-            )
+            if (visualProfile.showSecondaryMass) {
+                Text(
+                    text = formatMass(block.massScore),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ChemTableColors.onPrimary,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
