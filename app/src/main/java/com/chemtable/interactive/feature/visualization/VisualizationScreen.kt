@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -43,6 +44,7 @@ fun VisualizationScreen(
     innerPadding: PaddingValues,
     onPlayMiniGame: () -> Unit = {},
     onOpenMoleculeDex: () -> Unit = {},
+    onOpenReactorFoundation: () -> Unit = {},
     viewModel: VisualizationViewModel = hiltViewModel()
 ) {
     val mode by viewModel.selectedMode.collectAsState()
@@ -72,6 +74,27 @@ fun VisualizationScreen(
                 Text(
                     "원소를 모아 분자를 합성하는 미니게임 · 탭하여 플레이",
                     style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Card(
+            onClick = onOpenReactorFoundation,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("visualization_reactor_foundation_card")
+                .semantics {
+                    contentDescription = "분자 반응조 기초 실험 열기, 실험적 기초 기능"
+                },
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            ),
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("분자 반응조 · 기초 실험", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "실험적 기초 기능 · 완성된 게임이 아닙니다",
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
         }

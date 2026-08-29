@@ -36,6 +36,7 @@ import com.chemtable.interactive.feature.notes.NotesListScreen
 import com.chemtable.interactive.feature.calculator.CalculatorScreen
 import com.chemtable.interactive.feature.minigame.dex.MoleculeDexScreen
 import com.chemtable.interactive.feature.minigame.MoleculeGameScreen
+import com.chemtable.interactive.feature.minigame.reactor.ReactorFoundationScreen
 import com.chemtable.interactive.feature.visualization.VisualizationScreen
 import com.chemtable.interactive.feature.periodictable.PeriodicTableScreen
 import com.chemtable.interactive.feature.search.SearchScreen
@@ -93,7 +94,11 @@ fun ChemTableNavHost(
                 NavigationBar {
                     for (tab in tabs) {
                         val selected = currentRoute == tab.screen.route ||
-                            (tab.screen == Screen.Visualization && currentRoute == Screen.MoleculeDex.route)
+                            (tab.screen == Screen.Visualization &&
+                                currentRoute in setOf(
+                                    Screen.MoleculeDex.route,
+                                    Screen.ReactorFoundation.route,
+                                ))
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
@@ -163,7 +168,18 @@ fun ChemTableNavHost(
                         navController.navigate(Screen.MoleculeDex.route) {
                             launchSingleTop = true
                         }
+                    },
+                    onOpenReactorFoundation = {
+                        navController.navigate(Screen.ReactorFoundation.route) {
+                            launchSingleTop = true
+                        }
                     }
+                )
+            }
+            composable(Screen.ReactorFoundation.route) {
+                ReactorFoundationScreen(
+                    innerPadding = innerPadding,
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
             composable(Screen.MoleculeDex.route) {

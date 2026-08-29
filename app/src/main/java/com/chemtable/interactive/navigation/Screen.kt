@@ -79,6 +79,8 @@ sealed class Screen(val route: String) {
 
     object MoleculeDex : Screen("lab/molecule-dex")
 
+    object ReactorFoundation : Screen("reactor/foundation")
+
     object MoleculeGame : Screen("game/molecule?startElement={atomicNumber}") {
         fun createRoute(atomicNumber: Int? = null): String {
             val safeId = atomicNumber?.takeIf { it > 0 }
