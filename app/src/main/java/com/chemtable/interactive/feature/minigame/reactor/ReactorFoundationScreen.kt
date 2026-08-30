@@ -77,6 +77,7 @@ fun ReactorFoundationScreen(
         onSwipe = viewModel::onSwipe,
         onReset = viewModel::resetSample,
         onEntitySelected = viewModel::selectEntity,
+        onEmergencyVent = viewModel::emergencyVent,
         onNavigateBack = onNavigateBack,
         modifier = Modifier.padding(innerPadding),
     )
@@ -88,6 +89,7 @@ fun ReactorFoundationContent(
     onSwipe: (ReactorDirection) -> Unit,
     onReset: () -> Unit,
     onEntitySelected: (ReactorEntityId?) -> Unit,
+    onEmergencyVent: () -> Unit = {},
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -131,6 +133,20 @@ fun ReactorFoundationContent(
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            ),
+            modifier = Modifier.semantics {
+                contentDescription = "압력 게임 모델 안내. $ReactorPressureDisclaimer"
+            },
+        ) {
+            Text(
+                text = ReactorPressureDisclaimer,
+                modifier = Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
 
         when {
             state.isLoading -> Box(
@@ -151,6 +167,7 @@ fun ReactorFoundationContent(
                 onSwipe = onSwipe,
                 onReset = onReset,
                 onEntitySelected = onEntitySelected,
+                onEmergencyVent = onEmergencyVent,
             )
         }
         Spacer(Modifier.height(8.dp))
@@ -164,6 +181,7 @@ private fun ReactorReadyContent(
     onSwipe: (ReactorDirection) -> Unit,
     onReset: () -> Unit,
     onEntitySelected: (ReactorEntityId?) -> Unit,
+    onEmergencyVent: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -184,9 +202,11 @@ private fun ReactorReadyContent(
         Text("↓ 침강", fontWeight = FontWeight.SemiBold)
     }
     Text("보드를 위·아래·왼쪽·오른쪽으로 한 번 스와이프하세요.")
+    ReactorP3Hud(state = state, onEmergencyVent = onEmergencyVent)
     ReactorBoard(
         board = board,
         selectedEntityId = state.selectedEntityId,
+        swipeEnabled = state.operationalState != com.chemtable.interactive.feature.minigame.reactor.engine.ReactorOperationalState.OVERFLOW,
         onSwipe = onSwipe,
         onEntitySelected = onEntitySelected,
     )
@@ -211,6 +231,7 @@ private fun ReactorReadyContent(
 private fun ReactorBoard(
     board: ReactorBoardState,
     selectedEntityId: ReactorEntityId?,
+    swipeEnabled: Boolean = true,
     onSwipe: (ReactorDirection) -> Unit,
     onEntitySelected: (ReactorEntityId?) -> Unit,
 ) {
@@ -220,6 +241,7 @@ private fun ReactorBoard(
     val currentBoard by rememberUpdatedState(board)
     val currentOnSwipe by rememberUpdatedState(onSwipe)
     val currentOnEntitySelected by rememberUpdatedState(onEntitySelected)
+    val currentSwipeEnabled by rememberUpdatedState(swipeEnabled)
 
     Box(
         modifier = Modifier
@@ -227,9 +249,13 @@ private fun ReactorBoard(
             .aspectRatio(1f)
             .testTag("reactor_board")
             .semantics {
-                contentDescription = "5×5 분자 반응조 보드, 정확히 25칸"
+                contentDescription = if (swipeEnabled) {
+                    "5×5 분자 반응조 보드, 정확히 25칸"
+                } else {
+                    "5×5 분자 반응조 보드, 오버플로로 스와이프 잠김, 정확히 25칸"
+                }
             }
-            .pointerInput(Unit) {
+            .pointerInput(swipeEnabled) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     var dragAmount = Offset.Zero
@@ -242,7 +268,7 @@ private fun ReactorBoard(
                             if (dragAmount.getDistance() > tapThreshold) isDrag = true
                             change.consume()
                         } else {
-                            if (isDrag) {
+                            if (isDrag && currentSwipeEnabled) {
                                 val dx = dragAmount.x
                                 val dy = dragAmount.y
                                 when {
@@ -363,10 +389,10 @@ private fun ReactorEventLog(events: List<ReactorTurnEvent>, replayVerified: Bool
                 Text("아직 실행된 이벤트가 없습니다.")
             } else {
                 Text(if (replayVerified) "이벤트 재생 검증 완료" else "이벤트 재생 미검증")
-                events.take(8).forEachIndexed { index, event ->
+                events.take(24).forEachIndexed { index, event ->
                     Text("${index + 1}. ${eventSummary(event)}", style = MaterialTheme.typography.bodySmall)
                 }
-                if (events.size > 8) Text("외 ${events.size - 8}개")
+                if (events.size > 24) Text("외 ${events.size - 24}개")
             }
         }
     }
@@ -412,6 +438,7 @@ private fun eventSummary(event: ReactorTurnEvent): String = when (event) {
         "${behaviorKorean(event.behavior)} 이동: ${positionText(event.from)} → ${positionText(event.to)}"
     is ReactorTurnEvent.SettlingSwap ->
         "침강 교환: ${positionText(event.upperFrom)} ↔ ${positionText(event.lowerFrom)}"
+    else -> p3EventSummary(event)
 }
 
 private fun positionText(position: ReactorPosition): String =

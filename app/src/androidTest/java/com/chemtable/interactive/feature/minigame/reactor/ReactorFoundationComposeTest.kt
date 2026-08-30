@@ -86,7 +86,7 @@ class ReactorFoundationComposeTest {
         composeRule.onNodeWithTag("reactor_turn_label").assertTextEquals("턴 0")
         composeRule.onNodeWithTag("reactor_phase_label").assertTextEquals("침강 단계 0")
 
-        listOf("점수", "압력", "아이템", "광고", "결제").forEach { forbidden ->
+        listOf("점수", "아이템", "광고", "결제").forEach { forbidden ->
             composeRule.onAllNodesWithText(forbidden, substring = true).assertCountEquals(0)
         }
     }
@@ -189,6 +189,14 @@ class ReactorFoundationComposeTest {
         lastReplayVerified = lastReplayVerified,
         errorMessage = errorMessage,
         isLoading = false,
+        feedPreview = feedPreview,
+        pendingFeed = pendingFeed,
+        pressure = pressure,
+        pressureBand = pressureBand,
+        pressureBreakdown = pressureBreakdown,
+        operationalState = operationalState,
+        failureCount = failureCount,
+        recoveryCount = recoveryCount,
     )
 
     private fun session(): ReactorFoundationSession {

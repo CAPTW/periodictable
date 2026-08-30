@@ -53,6 +53,87 @@ sealed interface ReactorTurnEvent {
         override val movedEntityIds: List<ReactorEntityId> =
             listOf(upperEntityId, lowerEntityId)
     }
+
+    data class FeedAttempted(
+        val scheduleIndex: Int,
+        val symbol: String,
+        val atomicNumber: Int,
+        val resolvedTurn: Int,
+        val feedCursor: Int,
+        val startColumn: Int,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
+
+    data class FeedPlaced(
+        val entityId: ReactorEntityId,
+        val entity: ReactorEntity,
+        val formula: String,
+        val scheduleIndex: Int,
+        val position: ReactorPosition,
+        val startColumn: Int,
+        val scannedColumns: List<Int>,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
+
+    data class FeedBlocked(
+        val scheduleIndex: Int,
+        val symbol: String,
+        val startColumn: Int,
+        val scannedColumns: List<Int>,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
+
+    data class PressureChanged(
+        val oldPressure: Int,
+        val newPressure: Int,
+        val oldBand: ReactorPressureBand,
+        val newBand: ReactorPressureBand,
+        val breakdown: ReactorPressureBreakdown,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
+
+    data class OverflowTriggered(
+        val pressure: Int,
+        val failureCount: Int,
+        val oldState: ReactorOperationalState,
+        val newState: ReactorOperationalState,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
+
+    data class RecoveryRequested(
+        val failureCount: Int,
+        val recoveryCountBefore: Int,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
+
+    data class EmergencyVentApplied(
+        val ventedEntityIds: List<ReactorEntityId>,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
+
+    data class EntityVented(
+        val entityId: ReactorEntityId,
+        val formula: String,
+        val position: ReactorPosition,
+        val settlingIndex: Double,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
+
+    data class RecoveryCompleted(
+        val newPressure: Int,
+        val newState: ReactorOperationalState,
+        val recoveryCount: Int,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
 }
 
 enum class ReactorDirection { UP, DOWN, LEFT, RIGHT }

@@ -293,5 +293,15 @@ class ReactorBoardEngineTest {
         is ReactorTurnEvent.SettlingMove,
         is ReactorTurnEvent.SettlingSwap,
         -> 2
+        is ReactorTurnEvent.FeedAttempted -> 3
+        is ReactorTurnEvent.FeedPlaced,
+        is ReactorTurnEvent.FeedBlocked,
+        -> 4
+        is ReactorTurnEvent.PressureChanged -> 5
+        is ReactorTurnEvent.OverflowTriggered -> 6
+        is ReactorTurnEvent.RecoveryRequested -> 7
+        is ReactorTurnEvent.EmergencyVentApplied -> 8
+        is ReactorTurnEvent.EntityVented -> 9
+        is ReactorTurnEvent.RecoveryCompleted -> 10
     }
 }

@@ -10,6 +10,10 @@ import com.chemtable.interactive.feature.minigame.reactor.engine.MassReferenceSe
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorDirection
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorElementCatalog
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorElementSpecification
+import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorFeedSpecification
+import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorOperationalState
+import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorPressureBand
+import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorPressureBreakdown
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorTurnEvent
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorBoardState
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorEntityId
@@ -28,9 +32,16 @@ data class ReactorFoundationUiState(
     val lastReplayVerified: Boolean = false,
     val errorMessage: String? = null,
     val isLoading: Boolean = true,
+    val feedPreview: List<ReactorFeedSpecification> = emptyList(),
+    val pendingFeed: ReactorFeedSpecification? = null,
+    val pressure: Int = 0,
+    val pressureBand: ReactorPressureBand = ReactorPressureBand.NORMAL,
+    val pressureBreakdown: ReactorPressureBreakdown? = null,
+    val operationalState: ReactorOperationalState = ReactorOperationalState.ACTIVE,
+    val failureCount: Int = 0,
+    val recoveryCount: Int = 0,
 )
 
-/** Distinct, session-memory-only presentation owner for the P2 Reactor foundation. */
 @HiltViewModel
 class ReactorFoundationViewModel @Inject constructor(
     getElementsUseCase: GetElementsUseCase,
@@ -88,6 +99,12 @@ class ReactorFoundationViewModel @Inject constructor(
         publish(active.state)
     }
 
+    fun emergencyVent() {
+        val active = session ?: return
+        active.emergencyVent()
+        publish(active.state)
+    }
+
     fun selectEntity(entityId: ReactorEntityId?) {
         val active = session ?: return
         active.selectEntity(entityId)
@@ -102,6 +119,14 @@ class ReactorFoundationViewModel @Inject constructor(
             lastReplayVerified = state.lastReplayVerified,
             errorMessage = state.errorMessage,
             isLoading = false,
+            feedPreview = state.feedPreview,
+            pendingFeed = state.pendingFeed,
+            pressure = state.pressure,
+            pressureBand = state.pressureBand,
+            pressureBreakdown = state.pressureBreakdown,
+            operationalState = state.operationalState,
+            failureCount = state.failureCount,
+            recoveryCount = state.recoveryCount,
         )
     }
 }
