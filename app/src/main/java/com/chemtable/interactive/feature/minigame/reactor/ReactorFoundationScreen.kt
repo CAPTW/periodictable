@@ -89,8 +89,8 @@ fun ReactorFoundationContent(
     onSwipe: (ReactorDirection) -> Unit,
     onReset: () -> Unit,
     onEntitySelected: (ReactorEntityId?) -> Unit,
-    onEmergencyVent: () -> Unit = {},
     onNavigateBack: () -> Unit,
+    onEmergencyVent: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(
