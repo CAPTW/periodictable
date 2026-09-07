@@ -114,6 +114,12 @@ class ReactorFoundationViewModel @Inject constructor(
         publish(active.state)
     }
 
+    fun loadAdvancedItemSample() {
+        val active = session ?: return
+        active.loadAdvancedItemSample()
+        publish(active.state)
+    }
+
     fun loadItemSample() {
         val active = session ?: return
         active.loadItemSample()

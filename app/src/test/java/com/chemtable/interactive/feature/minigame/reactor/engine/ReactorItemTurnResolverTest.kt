@@ -132,4 +132,17 @@ class ReactorItemTurnResolverTest {
         s.emergencyVent();assertEquals(before,s.state.itemRechargeProgress)
         s.loadItemSample();assertEquals(0,s.state.itemRechargeProgress);assertEquals(6,s.state.itemActionsRemaining)
     }
+
+    @Test fun advancedSampleReachesFourAndCleavesWithoutChangingBasicSample() {
+        val s=session();s.loadAdvancedItemSample()
+        val totals=units(s.state.board);assertEquals(4,totals[ReactorSubstrate.A]);assertEquals(4,totals[ReactorSubstrate.B])
+        s.useItem(link)
+        assertEquals(4,(s.state.board.entityAt(ReactorPosition(0,0)) as ReactorPolymerEntity).units)
+        s.useItem(ReactorItemCommand.Cleave(0,2,ReactorSubstrate.A))
+        assertEquals(3,(s.state.board.entityAt(ReactorPosition(0,0)) as ReactorPolymerEntity).units)
+        assertEquals(1,(s.state.board.entityAt(ReactorPosition(0,2)) as ReactorPolymerEntity).units)
+        assertEquals(totals,units(s.state.board));assertTrue(s.state.lastReplayVerified)
+        s.loadAdvancedItemSample();assertEquals(0,s.state.board.turnIndex);assertEquals(6,s.state.itemActionsRemaining);assertEquals(0,s.state.itemRechargeProgress)
+        s.loadItemSample();assertEquals(2,units(s.state.board)[ReactorSubstrate.A])
+    }
 }

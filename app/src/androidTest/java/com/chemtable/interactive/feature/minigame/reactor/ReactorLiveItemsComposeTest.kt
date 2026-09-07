@@ -31,6 +31,7 @@ class ReactorLiveItemsComposeTest {
                     ReactorFoundationContent(state=state,onSwipe={s.swipe(it);state=ui(s.state)},
                         onReset={s.reset();state=ui(s.state)},onEntitySelected={},onNavigateBack={},
                         onLoadItemSample={s.loadItemSample();state=ui(s.state)},
+                        onLoadAdvancedItemSample={s.loadAdvancedItemSample();state=ui(s.state)},
                         onClaimItemRecharge={s.claimItemRecharge();state=ui(s.state)},
                         onUseItem={s.useItem(it);state=ui(s.state)},onEmergencyVent={s.emergencyVent();state=ui(s.state)})
                 }
@@ -74,5 +75,16 @@ class ReactorLiveItemsComposeTest {
         compose.runOnIdle { assertEquals(before.copy(itemActionsRemaining=6,itemRechargeProgress=0),s.state) }
         compose.onNodeWithTag("p5_recharge_claim").assertIsNotEnabled()
         compose.onNodeWithTag("p5_recharge_progress").assertTextEquals("무료 보급 준비 0/3")
+    }
+
+    @Test fun advancedPublicSampleSupportsFourUnitLearningLoop() {
+        val s=session();show(s);click("p5_live_open");click("p5_live_advanced")
+        compose.onNodeWithTag("p5_live_cell_0").performScrollTo().assertTextContains("A3")
+        click("p5_live_cell_0");click("p5_live_cell_2");click("p5_live_link")
+        compose.onNodeWithTag("p5_live_cell_0").performScrollTo().assertTextContains("A4")
+        click("p5_live_cell_0");click("p5_live_cell_2");click("p5_live_enzyme_A")
+        compose.onNodeWithTag("p5_live_cell_0").performScrollTo().assertTextContains("A3")
+        compose.onNodeWithTag("p5_live_cell_2").assertTextContains("A1")
+        compose.runOnIdle { assertEquals(2,s.state.board.turnIndex);assertEquals(4,s.state.itemActionsRemaining);assertTrue(s.state.lastReplayVerified) }
     }
 }

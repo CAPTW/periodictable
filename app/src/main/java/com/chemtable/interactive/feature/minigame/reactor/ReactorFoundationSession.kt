@@ -185,6 +185,10 @@ class ReactorFoundationSession(
         state = state.copy(itemActionsRemaining = state.itemActionsRemaining + 1, itemRechargeProgress = 0)
     }
 
+    fun loadAdvancedItemSample() {
+        state = initialState(com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemTurnResolver.sampleBoard(advanced = true))
+    }
+
     fun loadItemSample() {
         state = initialState(com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemTurnResolver.sampleBoard())
     }

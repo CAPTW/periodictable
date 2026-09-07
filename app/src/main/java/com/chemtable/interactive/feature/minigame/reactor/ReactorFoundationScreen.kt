@@ -87,6 +87,7 @@ fun ReactorFoundationScreen(
         onClaimSupply = supplyViewModel::claim,
         onReloadSupply = supplyViewModel::reload,
         onLoadItemSample = viewModel::loadItemSample,
+        onLoadAdvancedItemSample = viewModel::loadAdvancedItemSample,
         onUseItem = viewModel::useItem,
         onClaimItemRecharge = viewModel::claimItemRecharge,
     )
@@ -107,6 +108,7 @@ fun ReactorFoundationContent(
     onLoadItemSample: () -> Unit = {},
     onUseItem: (com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemCommand) -> Unit = {},
     onClaimItemRecharge: () -> Unit = {},
+    onLoadAdvancedItemSample: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -186,7 +188,7 @@ fun ReactorFoundationContent(
                 onEmergencyVent = onEmergencyVent,
             )
         }
-        ReactorLiveItemsEntry(state, onLoadItemSample, onUseItem, onClaimItemRecharge)
+        ReactorLiveItemsEntry(state, onLoadItemSample, onUseItem, onClaimItemRecharge, onLoadAdvancedItemSample)
         ReactorItemExperimentEntry()
         Spacer(Modifier.height(8.dp))
     }

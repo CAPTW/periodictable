@@ -21,6 +21,7 @@ internal fun ReactorLiveItemsEntry(
     onLoadSample: () -> Unit,
     onUse: (ReactorItemCommand) -> Unit,
     onClaimRecharge: () -> Unit = {},
+    onLoadAdvancedSample: () -> Unit = {},
 ) {
     var open by remember { mutableStateOf(false) }
     var selectedCells by remember(state.board) { mutableStateOf(emptyList<Int>()) }
@@ -69,6 +70,8 @@ internal fun ReactorLiveItemsEntry(
                 if (state.operationalState == ReactorOperationalState.OVERFLOW) Text("오버플로: 닫은 뒤 기존 무료 긴급 배출을 사용하세요.")
                 Text("아래 초기화는 현재 반응조 전체를 P5 샘플로 바꿉니다. 턴·공급·압력·실험 자원도 초기화하며, 보관함은 바꾸지 않습니다. 앱 재시작 후 보드는 복원되지 않습니다.")
                 TextButton(onClick = { selectedCells=emptyList();onLoadSample() }, modifier=Modifier.testTag("p5_live_sample")) { Text("P5 샘플로 현재 보드 초기화") }
+                Text("4조각 연습은 A3+A1, B3+B1로 시작합니다. 같은 기질의 3과 1을 연결해 4를 만든 뒤, 맞는 효소로 3과 1로 나누어 보세요. 아래 버튼도 현재 보드·턴·자원을 모두 초기화합니다.", Modifier.testTag("p5_advanced_guide"))
+                TextButton(onClick = { selectedCells=emptyList();onLoadAdvancedSample() }, modifier=Modifier.testTag("p5_live_advanced")) { Text("4조각 학습 샘플로 초기화") }
                 TextButton(onClick = { open=false }, modifier=Modifier.testTag("p5_live_close")) { Text("닫기") }
             }
         }

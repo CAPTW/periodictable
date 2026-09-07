@@ -86,10 +86,11 @@ class ReactorItemTurnResolver(
     }.getOrDefault(false)
 
     companion object {
-        fun sampleBoard(): ReactorBoardState {
+        fun sampleBoard(advanced: Boolean = false): ReactorBoardState {
             val sample = ItemExperimentState.sample()
             val entities = sample.cells.mapIndexedNotNull { i, piece -> piece?.let {
-                ReactorPolymerEntity(ReactorEntityId("reactor-p5-sample-$i"),it.substrate,it.units)
+                ReactorPolymerEntity(ReactorEntityId("reactor-p5-sample-$i"),it.substrate,
+                    if (advanced && (i == 0 || i == 20)) 3 else it.units)
             } }
             return ReactorBoardState(ReactorBoardSize.FIVE_BY_FIVE,
                 sample.cells.mapIndexed { i, piece -> piece?.let { ReactorEntityId("reactor-p5-sample-$i") } },

@@ -62,3 +62,12 @@ unchanged. Item turns, free vents, rejected swipes and swipes at full capacity d
 not earn progress. Claim is repeat-safe. Reset clears progress with the whole
 sample; this session-only state is not restored after leaving/restarting. The
 three-turn rate is a reversible prototype choice, not final accepted balance.
+
+
+## Public four-unit learning sample (W-P5-006)
+The separate Four-unit Learning Sample reset begins with A3+A1 and B3+B1
+(and S2). Link3+1 into4, then use the matching enzyme to release1 and retain3.
+The UI explicitly states that this replaces the whole board/counters/resources.
+The basic P5 and normal P3 samples remain unchanged. This enables reachable
+capacity-boundary learning without changing default feed, recipes, pressure,
+item costs or recharge rate. These remain fictional substrates, not real families.
