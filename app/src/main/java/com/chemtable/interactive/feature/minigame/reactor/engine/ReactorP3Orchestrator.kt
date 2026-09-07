@@ -66,6 +66,19 @@ class ReactorP3Orchestrator(
             )
         }
         val p2 = p2Engine.resolveTurn(board, direction)
+        return continueAfterAction(p2, operationalState, feedCursor, successfulFeedSerial, failureCount, recoveryCount)
+    }
+
+    /** Shared once-per-turn feed and pressure tail for swipe and validated item actions. */
+    internal fun continueAfterAction(
+        p2: ReactorTurnResult,
+        operationalState: ReactorOperationalState,
+        feedCursor: Int,
+        successfulFeedSerial: Int,
+        failureCount: Int,
+        recoveryCount: Int,
+    ): ReactorP3TurnResult {
+        require(operationalState == ReactorOperationalState.ACTIVE)
         val previousPressure = ReactorPressureEvaluator.evaluate(p2.board, feedBlocked = false)
         val feed = feedResolver.resolve(
             board = p2.board,

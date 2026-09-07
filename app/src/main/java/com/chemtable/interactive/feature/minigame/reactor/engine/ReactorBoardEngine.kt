@@ -4,6 +4,7 @@ import com.chemtable.interactive.feature.minigame.reactor.model.ReactorBoardStat
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorEntity
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorEntityId
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorMoleculeEntity
+import com.chemtable.interactive.feature.minigame.reactor.model.ReactorPolymerEntity
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorPosition
 
 data class ReactorTurnResult(
@@ -88,7 +89,9 @@ class ReactorBoardEngine(
             while (inputIndex < inputs.size) {
                 val first = inputs[inputIndex]
                 val second = inputs.getOrNull(inputIndex + 1)
-                val specification = second?.let {
+                val specification = second?.takeUnless {
+                    first.entity is ReactorPolymerEntity || it.entity is ReactorPolymerEntity
+                }?.let {
                     reactionCatalog.findProduct(first.entity.composition + it.entity.composition)
                 }
 

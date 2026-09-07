@@ -7,7 +7,7 @@ value class ReactorEntityId(val value: String) {
     }
 }
 
-enum class ReactorEntityKind { ELEMENT, MOLECULE }
+enum class ReactorEntityKind { ELEMENT, MOLECULE, POLYMER_BUNDLE }
 
 enum class SettlingBehavior { RISE, NEUTRAL, SINK }
 

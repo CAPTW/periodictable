@@ -147,7 +147,7 @@ class ReactorP3ComposeTest {
                 )
             }
         }
-        composeRule.onNodeWithText("반응조 오버플로").assertIsDisplayed()
+        composeRule.onNodeWithText("반응조 오버플로").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("긴급 배출은 광고나 결제 없이 윗줄 혼잡을 제거합니다.")
             .assertExists()
         composeRule.onNodeWithText("긴급 배출").assertExists()

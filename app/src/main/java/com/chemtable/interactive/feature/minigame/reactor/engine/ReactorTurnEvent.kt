@@ -8,6 +8,16 @@ import com.chemtable.interactive.feature.minigame.reactor.model.SettlingBehavior
 sealed interface ReactorTurnEvent {
     val movedEntityIds: List<ReactorEntityId>
 
+    data class ItemApplied(
+        val command: ReactorItemCommand,
+        val turnBefore: Int,
+        val actionsBefore: Int,
+        val actionsAfter: Int,
+        val boardAfterEffect: com.chemtable.interactive.feature.minigame.reactor.model.ReactorBoardState,
+    ) : ReactorTurnEvent {
+        override val movedEntityIds: List<ReactorEntityId> = emptyList()
+    }
+
     data class PlayerMove(
         val entityId: ReactorEntityId,
         val from: ReactorPosition,

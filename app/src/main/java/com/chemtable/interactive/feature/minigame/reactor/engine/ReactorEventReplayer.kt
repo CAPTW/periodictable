@@ -189,6 +189,7 @@ class ReactorEventReplayer {
         var previousStage = -1
         events.forEach { event ->
             val stage = when (event) {
+                is ReactorTurnEvent.ItemApplied -> { errors += "Item receipts require the P5 replay validator"; -1 }
                 is ReactorTurnEvent.PlayerMove -> 0
                 is ReactorTurnEvent.Merge -> 1
                 is ReactorTurnEvent.SettlingMove,

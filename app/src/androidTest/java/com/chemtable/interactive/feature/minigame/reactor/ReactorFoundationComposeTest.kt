@@ -86,7 +86,9 @@ class ReactorFoundationComposeTest {
         composeRule.onNodeWithTag("reactor_turn_label").assertTextEquals("턴 0")
         composeRule.onNodeWithTag("reactor_phase_label").assertTextEquals("침강 단계 0")
 
-        listOf("점수", "아이템", "광고", "결제").forEach { forbidden ->
+        // OD-20260907-P5-09 authorizes the item experiment; paywalls remain prohibited.
+        composeRule.onNodeWithTag("p5_open").assertExists()
+        listOf("점수", "광고", "결제").forEach { forbidden ->
             composeRule.onAllNodesWithText(forbidden, substring = true).assertCountEquals(0)
         }
     }
@@ -172,7 +174,7 @@ class ReactorFoundationComposeTest {
             .assertContentDescriptionContains("1행 3열", substring = true)
             .assertContentDescriptionContains("수소 H", substring = true)
             .assertContentDescriptionContains("위로 부유하는 게임 블록", substring = true)
-        firstHydrogenCell.performClick()
+        firstHydrogenCell.performScrollTo().performClick()
 
         composeRule.onNodeWithTag("reactor_entity_detail").assertExists()
         composeRule.onNodeWithText("수소 · H", substring = true).assertExists()

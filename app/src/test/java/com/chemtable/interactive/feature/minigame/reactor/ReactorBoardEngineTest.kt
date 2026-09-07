@@ -288,6 +288,7 @@ class ReactorBoardEngineTest {
     }
 
     private fun actualStage(event: ReactorTurnEvent): Int = when (event) {
+        is ReactorTurnEvent.ItemApplied -> error("Item receipts cannot enter a P2-only trace")
         is ReactorTurnEvent.PlayerMove -> 0
         is ReactorTurnEvent.Merge -> 1
         is ReactorTurnEvent.SettlingMove,

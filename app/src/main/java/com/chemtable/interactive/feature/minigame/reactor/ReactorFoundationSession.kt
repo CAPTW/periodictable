@@ -39,6 +39,9 @@ data class ReactorFoundationSessionState(
     val operationalState: ReactorOperationalState = ReactorOperationalState.ACTIVE,
     val failureCount: Int = 0,
     val recoveryCount: Int = 0,
+    val itemActionsRemaining: Int = 6,
+    val itemRechargeProgress: Int = 0,
+    val itemLearningMessage: String? = null,
 )
 
 class ReactorFoundationSession(
@@ -61,6 +64,8 @@ class ReactorFoundationSession(
     private val eventReplayer = ReactorEventReplayer()
     private val p3Replayer = ReactorP3EventReplayer()
     private val recoveryResolver = ReactorRecoveryResolver()
+
+    private val itemResolver = com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemTurnResolver(orchestrator, settlingProfile)
 
     var state: ReactorFoundationSessionState = initialState()
         private set
@@ -129,6 +134,7 @@ class ReactorFoundationSession(
             operationalState = result.operational.state,
             failureCount = result.operational.failureCount,
             recoveryCount = result.recoveryCount,
+            itemRechargeProgress = if (!result.rejected && state.itemActionsRemaining < 6) (state.itemRechargeProgress + 1).coerceAtMost(3) else state.itemRechargeProgress,
         )
     }
 
@@ -173,6 +179,47 @@ class ReactorFoundationSession(
         )
     }
 
+    /** Session-only reward; no board turn, event receipt or persistent inventory is changed. */
+    fun claimItemRecharge() {
+        if (state.itemRechargeProgress < 3 || state.itemActionsRemaining >= 6) return
+        state = state.copy(itemActionsRemaining = state.itemActionsRemaining + 1, itemRechargeProgress = 0)
+    }
+
+    fun loadItemSample() {
+        state = initialState(com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemTurnResolver.sampleBoard())
+    }
+
+    fun useItem(command: com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemCommand) {
+        val initial = state
+        val before = ReactorP3ReplayContext(initial.feedCursor,initial.successfulFeedSerial,
+            initial.operationalState,initial.failureCount,initial.recoveryCount)
+        val result = runCatching {
+            itemResolver.resolve(initial.board,command,before,initial.itemActionsRemaining).also {
+                check(itemResolver.validate(initial.board,command,before,initial.itemActionsRemaining,it)) {
+                    "아이템 이벤트 재생 검증에 실패했습니다."
+                }
+            }
+        }.getOrElse { error ->
+            state = initial.copy(lastReplayVerified = false, errorMessage = error.message ?: "아이템을 적용하지 못했습니다.")
+            return
+        }
+        val tail = result.continuation
+        state = initial.copy(
+            board = tail.board, latestEvents = result.events, itemActionsRemaining = result.remainingActions,
+            itemLearningMessage = when (command) {
+                is com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemCommand.Cleave -> "맞는 효소로 조각 1개를 분리했습니다. 남은 묶음과 조각의 총량은 같습니다. 빈 공간을 살펴 재연결해 보세요."
+                is com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemCommand.Link -> "같은 기질의 조각을 한 묶음으로 연결했습니다. 총량은 그대로이며, 공급이 빈 칸을 채울 수 있습니다."
+            },
+            selectedEntityId = initial.selectedEntityId?.takeIf { tail.board.entityStore[it] != null },
+            lastReplayVerified = true, errorMessage = null,
+            feedCursor = tail.feedCursor, successfulFeedSerial = tail.successfulFeedSerial,
+            pendingFeed = tail.pending, feedPreview = tail.preview,
+            pressure = tail.pressure.pressure, pressureBand = tail.pressure.band,
+            pressureBreakdown = tail.pressure, operationalState = tail.operational.state,
+            failureCount = tail.operational.failureCount, recoveryCount = tail.recoveryCount,
+        )
+    }
+
     fun reset() {
         state = initialState()
     }
@@ -183,8 +230,7 @@ class ReactorFoundationSession(
         )
     }
 
-    private fun initialState(): ReactorFoundationSessionState {
-        val board = sampleFactory.create()
+    private fun initialState(board: ReactorBoardState = sampleFactory.create()): ReactorFoundationSessionState {
         val schedule = ReactorFeedSchedule.state(0, 0)
         val pressure = ReactorPressureEvaluator.evaluate(board, feedBlocked = false)
         return ReactorFoundationSessionState(

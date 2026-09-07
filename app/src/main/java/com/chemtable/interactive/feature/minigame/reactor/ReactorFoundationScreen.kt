@@ -52,6 +52,7 @@ import com.chemtable.interactive.feature.minigame.reactor.model.ReactorBoardStat
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorEntity
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorEntityId
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorEntityKind
+import com.chemtable.interactive.feature.minigame.reactor.model.ReactorPolymerEntity
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorPosition
 import com.chemtable.interactive.feature.minigame.reactor.model.SettlingBehavior
 import java.util.Locale
@@ -85,6 +86,9 @@ fun ReactorFoundationScreen(
         supplyState = supplyState,
         onClaimSupply = supplyViewModel::claim,
         onReloadSupply = supplyViewModel::reload,
+        onLoadItemSample = viewModel::loadItemSample,
+        onUseItem = viewModel::useItem,
+        onClaimItemRecharge = viewModel::claimItemRecharge,
     )
 }
 
@@ -100,6 +104,9 @@ fun ReactorFoundationContent(
     supplyState: ReactorSupplyUiState? = null,
     onClaimSupply: () -> Unit = {},
     onReloadSupply: () -> Unit = {},
+    onLoadItemSample: () -> Unit = {},
+    onUseItem: (com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemCommand) -> Unit = {},
+    onClaimItemRecharge: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -179,6 +186,8 @@ fun ReactorFoundationContent(
                 onEmergencyVent = onEmergencyVent,
             )
         }
+        ReactorLiveItemsEntry(state, onLoadItemSample, onUseItem, onClaimItemRecharge)
+        ReactorItemExperimentEntry()
         Spacer(Modifier.height(8.dp))
     }
 }
@@ -421,17 +430,25 @@ private fun ReactorEntityDetail(entity: ReactorEntity, onClose: () -> Unit) {
                 TextButton(onClick = onClose) { Text("닫기") }
             }
             HorizontalDivider()
+            if (entity is ReactorPolymerEntity) {
+                Text("가상 기질 ${entity.substrate}, ${entity.units}조각 · 한 칸 묶음")
+                Text("실제 몰질량: 해당 없음. 가상 기질의 중립 지수 0은 게임 규칙입니다.")
+            } else {
             Text("종류: ${if (entity.kind == ReactorEntityKind.ELEMENT) "원소" else "분자"}")
             Text("몰질량: ${formatNumber(entity.molarMass)} g/mol")
             Text("기준 몰질량: 32.00 g/mol")
             Text("침강 지수: ${formatSignedNumber(entity.settlingIndex)}")
             Text("동작: ${behaviorKorean(entity.settlingBehavior)}")
             Text("이 표시는 몰질량 기반 게임용 단순화 모델입니다.")
+            }
         }
     }
 }
 
 private fun reactorEntityDescription(row: Int, column: Int, entity: ReactorEntity): String =
+    if (entity is ReactorPolymerEntity) {
+        "${row + 1}행 ${column + 1}열, 가상 기질 ${entity.visibleLabel}, ${entity.units}조각 한 칸 묶음. 실제 몰질량 해당 없음, 게임 중립 지수 0"
+    } else
     "${row + 1}행 ${column + 1}열, ${entity.displayName} ${entity.visibleLabel}, " +
         "${if (entity.kind == ReactorEntityKind.ELEMENT) "원소" else "분자"}, " +
         "몰질량 ${formatNumber(entity.molarMass)} g/mol, " +
@@ -439,6 +456,7 @@ private fun reactorEntityDescription(row: Int, column: Int, entity: ReactorEntit
         "${behaviorSemantic(entity.settlingBehavior)}. 몰질량 기반 단순화 게임 모델"
 
 private fun eventSummary(event: ReactorTurnEvent): String = when (event) {
+    is ReactorTurnEvent.ItemApplied -> "아이템 ${if (event.command is com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemCommand.Link) "연결" else "부분 분해"}: 자원 ${event.actionsBefore} → ${event.actionsAfter}"
     is ReactorTurnEvent.PlayerMove ->
         "압축 이동 ${event.entityId.value}: ${positionText(event.from)} → ${positionText(event.to)}"
     is ReactorTurnEvent.Merge ->

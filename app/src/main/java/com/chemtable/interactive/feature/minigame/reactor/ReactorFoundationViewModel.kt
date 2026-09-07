@@ -40,6 +40,9 @@ data class ReactorFoundationUiState(
     val operationalState: ReactorOperationalState = ReactorOperationalState.ACTIVE,
     val failureCount: Int = 0,
     val recoveryCount: Int = 0,
+    val itemActionsRemaining: Int = 6,
+    val itemRechargeProgress: Int = 0,
+    val itemLearningMessage: String? = null,
 )
 
 @HiltViewModel
@@ -105,6 +108,24 @@ class ReactorFoundationViewModel @Inject constructor(
         publish(active.state)
     }
 
+    fun claimItemRecharge() {
+        val active = session ?: return
+        active.claimItemRecharge()
+        publish(active.state)
+    }
+
+    fun loadItemSample() {
+        val active = session ?: return
+        active.loadItemSample()
+        publish(active.state)
+    }
+
+    fun useItem(command: com.chemtable.interactive.feature.minigame.reactor.engine.ReactorItemCommand) {
+        val active = session ?: return
+        active.useItem(command)
+        publish(active.state)
+    }
+
     fun selectEntity(entityId: ReactorEntityId?) {
         val active = session ?: return
         active.selectEntity(entityId)
@@ -114,6 +135,9 @@ class ReactorFoundationViewModel @Inject constructor(
     private fun publish(state: ReactorFoundationSessionState) {
         _uiState.value = ReactorFoundationUiState(
             board = state.board,
+            itemActionsRemaining = state.itemActionsRemaining,
+            itemRechargeProgress = state.itemRechargeProgress,
+            itemLearningMessage = state.itemLearningMessage,
             latestEvents = state.latestEvents,
             selectedEntityId = state.selectedEntityId,
             lastReplayVerified = state.lastReplayVerified,
