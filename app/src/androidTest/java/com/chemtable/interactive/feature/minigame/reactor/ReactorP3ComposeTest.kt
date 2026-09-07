@@ -199,6 +199,8 @@ class ReactorP3ComposeTest {
         assertEquals(cursor, session.state.feedCursor)
         assertTrue(session.state.pressure < 100)
         assertEquals(1, session.state.recoveryCount)
+        composeRule.onNodeWithText("이벤트 재생 미검증").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("이벤트 재생 검증 완료").assertDoesNotExist()
         composeRule.onNodeWithTag("reactor_board", useUnmergedTree = true)
             .assertContentDescriptionContains("정확히 25칸", substring = true)
     }

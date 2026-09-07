@@ -11,6 +11,7 @@ import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorFeedSpec
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorMassAuthority
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorOperationalState
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorP3EventReplayer
+import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorP3ReplayContext
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorP3Orchestrator
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorPressureBand
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorPressureBreakdown
@@ -91,7 +92,13 @@ class ReactorFoundationSession(
             return
         }
         val p2Replay = eventReplayer.validate(initial, result.p2)
-        val p3Replay = p3Replayer.validate(initial, result)
+        val p3Replay = p3Replayer.validate(
+            initial, result,
+            ReactorP3ReplayContext(
+                state.feedCursor, state.successfulFeedSerial, state.operationalState,
+                state.failureCount, state.recoveryCount,
+            ),
+        )
         if (!p2Replay.isValid || !p3Replay.isValid || p3Replay.replayedBoard != result.board) {
             state = state.copy(
                 lastReplayVerified = false,
@@ -150,7 +157,8 @@ class ReactorFoundationSession(
             board = result.board,
             latestEvents = result.events,
             selectedEntityId = state.selectedEntityId?.takeIf { result.board.entityStore[it] != null },
-            lastReplayVerified = true,
+            // Recovery events have not been replayed.
+            lastReplayVerified = false,
             errorMessage = null,
             feedCursor = result.cursor,
             successfulFeedSerial = result.successfulFeedSerial,

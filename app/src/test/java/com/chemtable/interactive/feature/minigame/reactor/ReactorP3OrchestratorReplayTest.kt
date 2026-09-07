@@ -3,6 +3,7 @@ package com.chemtable.interactive.feature.minigame.reactor
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorDirection
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorOperationalState
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorP3EventReplayer
+import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorP3ReplayContext
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorP3Orchestrator
 import com.chemtable.interactive.feature.minigame.reactor.engine.ReactorTurnEvent
 import com.chemtable.interactive.feature.minigame.reactor.model.ReactorPosition
@@ -107,7 +108,7 @@ class ReactorP3OrchestratorReplayTest {
             failureCount = 0,
             recoveryCount = 0,
         )
-        val replay = replayer.validate(initial, result)
+        val replay = replayer.validate(initial, result, ReactorP3ReplayContext(0, 0, ReactorOperationalState.ACTIVE, 0, 0))
         assertTrue(replay.errors.toString(), replay.isValid)
         assertEquals(result.board, replay.replayedBoard)
         assertEquals(result.feedCursor, replay.feedCursor)
