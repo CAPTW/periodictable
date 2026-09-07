@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
@@ -69,7 +70,7 @@ fun PeriodicTableScreen(
     // survives the FIT<->ZOOM toggle, tab/back navigation, rotation and process death.
     var selectedAtomicNumber by rememberSaveable { mutableStateOf<Int?>(null) }
     var quickPreviewAtomicNumber by rememberSaveable { mutableStateOf<Int?>(null) }
-    var zoomScale by rememberSaveable { mutableStateOf(1f) }
+    var zoomScale by rememberSaveable { mutableFloatStateOf(1f) }
     var zoomOffset by rememberSaveable(stateSaver = OffsetSaver) { mutableStateOf(Offset.Zero) }
 
     val selectedElement = selectedAtomicNumber?.let { target ->

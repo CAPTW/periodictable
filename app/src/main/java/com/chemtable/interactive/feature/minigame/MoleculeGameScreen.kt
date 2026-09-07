@@ -1,6 +1,7 @@
 package com.chemtable.interactive.feature.minigame
 
 import android.os.SystemClock
+import java.util.Locale
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -45,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -142,7 +144,7 @@ fun MoleculeGameScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var feedback by remember { mutableStateOf<FeedbackUi?>(null) }
-    var shakeTrigger by remember { mutableStateOf(0) }
+    var shakeTrigger by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         viewModel.effects.collect { effect ->
@@ -933,7 +935,7 @@ private fun TutorialCoachMarks(onSkip: () -> Unit, onDone: () -> Unit) {
         "조합하면 분자" to
             "정해진 조합이 만나면 분자 블록으로 합쳐져요. 예: H + H → H₂. 실제 반응 조건은 단순화했어요.",
     )
-    var step by remember { mutableStateOf(0) }
+    var step by remember { mutableIntStateOf(0) }
     val isLast = step >= steps.lastIndex
 
     Scrim {
@@ -1025,7 +1027,7 @@ private fun categoryColor(category: ElementCategory?): Color = when (category) {
 }
 
 private fun formatMass(value: Double): String =
-    if (value <= 0.0) "" else String.format("%.1f", value)
+    if (value <= 0.0) "" else String.format(Locale.ROOT, "%.1f", value)
 
 private fun molarMassDescription(value: Double): String =
     if (value <= 0.0) "몰 질량 정보 없음" else "${formatMass(value)} g/mol"

@@ -90,8 +90,8 @@ fun ReactorFoundationContent(
     onReset: () -> Unit,
     onEntitySelected: (ReactorEntityId?) -> Unit,
     onNavigateBack: () -> Unit,
-    onEmergencyVent: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onEmergencyVent: () -> Unit = {},
 ) {
     Column(
         modifier = modifier

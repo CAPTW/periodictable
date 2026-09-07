@@ -48,10 +48,10 @@ private fun ElementCategory.toCategoryColor(): Color = when (this) {
 fun ElementCell(
     element: Element,
     isCompact: Boolean,
-    isSelected: Boolean = false,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSelected: Boolean = false
 ) {
     val targetColor = element.category.toCategoryColor()
     val backgroundColor by animateColorAsState(targetValue = targetColor, label = "elementCellColor")

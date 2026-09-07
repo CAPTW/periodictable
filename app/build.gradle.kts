@@ -20,7 +20,7 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.chemtable.interactive"
-    compileSdk = 35
+    compileSdk = 36
 
     kotlin {
         jvmToolchain(21)
@@ -32,7 +32,7 @@ android {
     defaultConfig {
         applicationId = "com.chemtable.interactive"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
