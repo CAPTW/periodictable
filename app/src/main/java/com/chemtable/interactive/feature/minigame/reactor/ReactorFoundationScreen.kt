@@ -70,8 +70,10 @@ fun ReactorFoundationScreen(
     innerPadding: PaddingValues,
     onNavigateBack: () -> Unit,
     viewModel: ReactorFoundationViewModel = hiltViewModel(),
+    supplyViewModel: ReactorSupplyViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
+    val supplyState by supplyViewModel.state.collectAsState()
     ReactorFoundationContent(
         state = state,
         onSwipe = viewModel::onSwipe,
@@ -80,6 +82,9 @@ fun ReactorFoundationScreen(
         onEmergencyVent = viewModel::emergencyVent,
         onNavigateBack = onNavigateBack,
         modifier = Modifier.padding(innerPadding),
+        supplyState = supplyState,
+        onClaimSupply = supplyViewModel::claim,
+        onReloadSupply = supplyViewModel::reload,
     )
 }
 
@@ -92,6 +97,9 @@ fun ReactorFoundationContent(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     onEmergencyVent: () -> Unit = {},
+    supplyState: ReactorSupplyUiState? = null,
+    onClaimSupply: () -> Unit = {},
+    onReloadSupply: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -119,6 +127,7 @@ fun ReactorFoundationContent(
             fontWeight = FontWeight.Bold,
         )
         Text(ReactorFoundationExplanation, style = MaterialTheme.typography.bodyMedium)
+        supplyState?.let { ReactorSupplyEntry(it, onClaimSupply, onReloadSupply) }
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
