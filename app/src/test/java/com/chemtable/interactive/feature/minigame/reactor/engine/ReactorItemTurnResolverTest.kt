@@ -145,4 +145,60 @@ class ReactorItemTurnResolverTest {
         s.loadAdvancedItemSample();assertEquals(0,s.state.board.turnIndex);assertEquals(6,s.state.itemActionsRemaining);assertEquals(0,s.state.itemRechargeProgress)
         s.loadItemSample();assertEquals(2,units(s.state.board)[ReactorSubstrate.A])
     }
+
+    @Test fun repeatedRechargePacingAcrossBothSamplesAndDirectionRotations() {
+        for (advanced in listOf(false, true)) for (rotation in 0..3) for (delay in listOf(0, 2)) {
+            fun runScenario(): List<String> {
+                val s = session()
+                if (advanced) s.loadAdvancedItemSample() else s.loadItemSample()
+                s.useItem(link)
+                s.useItem(ReactorItemCommand.Cleave(0, 2, ReactorSubstrate.A))
+                assertEquals(4, s.state.itemActionsRemaining)
+                val directions = listOf(ReactorDirection.LEFT, ReactorDirection.RIGHT, ReactorDirection.UP, ReactorDirection.DOWN)
+                val trace = mutableListOf<String>()
+                var claims = 0
+                var readyWait = 0
+                var vents = 0
+                var eligibleSwipes = 0
+                repeat(24) { step ->
+                    if (s.state.operationalState == ReactorOperationalState.OVERFLOW) {
+                        val progress = s.state.itemRechargeProgress
+                        s.emergencyVent()
+                        assertEquals(progress, s.state.itemRechargeProgress)
+                        vents++
+                    }
+                    val before = s.state
+                    s.swipe(directions[(step + rotation) % directions.size])
+                    assertTrue(s.state.lastReplayVerified)
+                    assertNull(s.state.errorMessage)
+                    if (before.itemActionsRemaining < 6 && s.state.board.turnIndex > before.board.turnIndex) eligibleSwipes++
+                    assertTrue(s.state.itemRechargeProgress in 0..3)
+                    if (s.state.itemRechargeProgress == 3) {
+                        if (readyWait++ >= delay) {
+                            val ready = s.state
+                            s.claimItemRecharge()
+                            assertEquals(ready.copy(itemActionsRemaining = ready.itemActionsRemaining + 1, itemRechargeProgress = 0), s.state)
+                            val claimed = s.state
+                            s.claimItemRecharge()
+                            assertEquals(claimed, s.state)
+                            claims++
+                            readyWait = 0
+                        }
+                    } else {
+                        val unavailable = s.state
+                        s.claimItemRecharge()
+                        assertEquals(unavailable, s.state)
+                    }
+                    trace += "${s.state.board.turnIndex},${s.state.pressure},${s.state.itemActionsRemaining},${s.state.itemRechargeProgress},$claims,$vents"
+                }
+                assertEquals(2, claims)
+                assertEquals(6, s.state.itemActionsRemaining)
+                assertEquals(0, s.state.itemRechargeProgress)
+                assertEquals(6 + 2 * delay, eligibleSwipes)
+                println("P5_PACING advanced=$advanced rotation=$rotation delay=$delay eligible=$eligibleSwipes claims=$claims vents=$vents trace=${trace.joinToString(";")}")
+                return trace
+            }
+            assertEquals(runScenario(), runScenario())
+        }
+    }
 }

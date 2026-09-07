@@ -71,3 +71,21 @@ The UI explicitly states that this replaces the whole board/counters/resources.
 The basic P5 and normal P3 samples remain unchanged. This enables reachable
 capacity-boundary learning without changing default feed, recipes, pressure,
 item costs or recharge rate. These remain fictional substrates, not real families.
+
+
+## Repeated recharge regression (W-P5-007)
+The reproducible JVM scenario starts each basic/advanced sample with one A link
+and matching cleavage (resources6 ->4), then runs24 swipes. Four rotations of
+LEFT/RIGHT/UP/DOWN and immediate versus two-extra-swipe delayed claims produce
+16 scenarios, each repeated twice. All restore two resources to the cap6 without
+resetting the sample. Immediate claims require6 eligible swipes; delayed claims
+require10: extra swipes at progress3 are not banked. Each claim preserves the
+entire session state except resource count/progress; a second click does nothing.
+The runs encounter3-4 overflows and use existing free vents, which earn no credit.
+After reaching6, further swipes do not accumulate progress. Every swipe passes
+replay validation, and each repeated scenario has identical measured traces.
+
+These are deterministic synthetic-catalog regression measurements, not human
+learning or optimal-strategy evidence. They support repeatability and nonbanking;
+they do not establish that the three-swipe rate is enjoyable or final balance.
+Evidence: PROJECT_CONTROL/evidence/P5PACE-20260907T222756/pacing-results.json.
